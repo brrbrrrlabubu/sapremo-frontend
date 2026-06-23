@@ -1,9 +1,5 @@
 {
-<<<<<<< HEAD
-  "name": "sapremo-frontend",
-=======
   "name": "sapremo-factory",
->>>>>>> assema-dev
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -14,10 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-<<<<<<< HEAD
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
-=======
     "@ant-design/icons": "^6.2.5",
     "@lottiefiles/dotlottie-react": "^0.19.4",
     "antd": "^6.4.4",
@@ -25,7 +17,6 @@
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.18.0"
->>>>>>> assema-dev
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
