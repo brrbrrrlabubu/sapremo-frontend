@@ -1,3 +1,22 @@
+<<<<<<< HEAD
+import { useUserStore } from './store/useUserStore'
+
+function App() {
+  const { user, setUser, clearUser } = useUserStore()
+
+  return (
+      <div>
+        <p>Пользователь: {user ? user.name : 'не выбран'}</p>
+        <button onClick={() => setUser({ id: '1', name: 'Алёна', role: 'admin' })}>
+          Войти как админ
+        </button>
+        <button onClick={clearUser}>Выйти</button>
+      </div>
+  )
+}
+
+export default App
+=======
 
 import "./App.css";
 import { ConfigProvider } from "antd";
@@ -30,3 +49,4 @@ export default function App() {
     </ConfigProvider>
   );
 }
+>>>>>>> 05f595a642692ed936fc7cb3f566484a0905ccec
