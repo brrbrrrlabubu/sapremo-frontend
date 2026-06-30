@@ -3,106 +3,53 @@ import { Layout, Menu } from "antd";
 import { 
   DashboardOutlined,
   ShoppingCartOutlined,
-  DatabaseOutlined
+  DatabaseOutlined,
+  DollarOutlined,
+  BarChartOutlined,
+  FileTextOutlined
 } from "@ant-design/icons";
 import { Outlet, Link, useLocation } from "react-router-dom";
-// Импортируем современный плеер Lottie
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-
-// Импортируем твои файлы анимаций из папки assets
-import onlineAnim from '../assets/online-status.json';
-import offlineAnim from '../assets/offline-status.json';
 
 const { Header, Sider, Content } = Layout;
 
 export default function MainLayout() {
   const [isOnline, setIsOnline] = useState<boolean>(true); 
-  const location = useLocation(); // Следим за текущим URL, чтобы меню подсвечивалось правильно
+  const location = useLocation();
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
-      {/* Боковое меню (Сайдбар) */}
-      <Sider breakpoint="lg" collapsedWidth="0">
-        <div style={{ 
-          height: 32, 
-          margin: 15, 
-          background: "rgba(255,255,255,0.2)", 
-          borderRadius: 6, 
-          textAlign: "center", 
-          color: "#fff", 
-          lineHeight: "32px", 
-          fontWeight: "bold" 
-        }}>
+      <Sider breakpoint="lg" collapsedWidth="0" style={{ background: "#001529" }}>
+        <div style={{ height: 32, margin: "16px", background: "rgba(255, 255, 255, 0.2)", borderRadius: 4, textAlign: "center", color: "#ffffff", lineHeight: "32px", fontWeight: "bold", fontSize: "14px", letterSpacing: "1px" }}>
           SAPREMO ЗАВОД
         </div>
         
         <Menu 
-          theme="dark"
+          theme="dark" 
           mode="inline"
-          selectedKeys={[location.pathname]} // Подсветка активного пункта по текущему пути
+          selectedKeys={[location.pathname]} 
+          style={{ background: "transparent" }}
           items={[
-            { 
-              key: "/", 
-              icon: <DashboardOutlined />, 
-              label: <Link to="/">Главная (Dashboard)</Link> 
-            },
-            { 
-              key: "/shipments", 
-              icon: <ShoppingCartOutlined />, 
-              label: <Link to="/shipments">Отгрузки товара</Link> 
-            },
-            { 
-              key: "/warehouses", 
-              icon: <DatabaseOutlined />, 
-              label: <Link to="/warehouses">Управление складами</Link> 
-            },
+            { key: "/", icon: <DashboardOutlined />, label: <Link to="/">Главная</Link> },
+            { key: "/shipments", icon: <ShoppingCartOutlined />, label: <Link to="/shipments">Отгрузки товара</Link> },
+            { key: "/warehouses", icon: <DatabaseOutlined />, label: <Link to="/warehouses">Управление складами</Link> },
+            { key: "/finance", icon: <DollarOutlined />, label: <Link to="/finance">Финансовый учет</Link> },
+            { key: "/analytics", icon: <BarChartOutlined />, label: <Link to="/analytics">Аналитика</Link> },
+            { key: "/reports", icon: <FileTextOutlined />, label: <Link to="/reports">Отчеты</Link> },
           ]}
         />
       </Sider>
       
-      {/* Основная часть страницы */}
       <Layout>
-        {/* Шапка (Верхняя панель) */}
-        <Header style={{ background: "#fff", padding: "0 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontWeight: "bold" }}>Панель Управления</div>
-          
-          {/* Интерактивный статус Онлайн / Офлайн с Lottie */}
-          <div 
-            onClick={() => setIsOnline(!isOnline)} 
-            style={{ 
-              cursor: "pointer", 
-              display: "flex", 
-              alignItems: "center", 
-              gap: "6px",
-              userSelect: "none"
-            }}
-          >
-            <div style={{ width: 35, height: 35, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <DotLottieReact 
-                autoplay 
-                loop 
-                data={isOnline ? onlineAnim : offlineAnim} 
-              />
-            </div>
-            <span style={{ 
-              fontWeight: "bold", 
-              transition: "color 0.3s",
-              color: isOnline ? "#52c41a" : "#ff4d4f" 
-            }}>
-              {isOnline ? "Онлайн" : "Офлайн"}
+        <Header style={{ background: "#ffffff", padding: "0 24px", display: "flex", justifyContent: "flex-end", alignItems: "center", height: "64px", borderBottom: "1px solid #f0f0f0" }}>
+          <div onClick={() => setIsOnline(!isOnline)} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", background: "#f5f5f5", padding: "6px 14px", borderRadius: "4px", border: "1px solid #e8e8e8", userSelect: "none" }}>
+            <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: isOnline ? "#4cd62b" : "#ff4d4f" }} />
+            <span style={{ fontWeight: 500, fontSize: "14px", color: "#000000" }}>
+              {isOnline ? "В сети" : "Не в сети"}
             </span>
           </div>
         </Header>
-        
-        {/* Контентная область */}
-        <Content style={{ margin: "24px 16px", padding: 24, background: "#fff", borderRadius: 6, minHeight: 280 }}>
-          <p style={{ color: "#8c8c8c", fontSize: "12px", marginBottom: "20px" }}>
-            Движок React Router + Lottie Animation активны
-          </p>
-          
-          {/* Сюда роутер динамически подставляет нужную страницу (DashboardPage, ShipmentsPage или WarehousesPage) */}
+        <Content style={{ padding: "24px", background: "#f5f5f5", minHeight: 280 }}>
           <Outlet />
-          
         </Content>
       </Layout>
     </Layout>

@@ -4,22 +4,21 @@ interface ProtectedRoutePros {
     allowedRoles?: string[];
 }
 
-export default function ProtectedRoute({ allowedRoles }:
-    ProtectedRoutePros ) {
-        // ВРЕМЕННАЯ ЗАГЛУШКА (Нурсултану)
-        // Имитируем, что пользователь залогинен и у него роль 'admin' 
-        const isAutheticated = true;
-        const useRole = "admin";
+export default function ProtectedRoute({ allowedRoles }: ProtectedRoutePros) {
+    // ВРЕМЕННАЯ ЗАГЛУШКА: имитируем, что пользователь залогинен
+    const isAuthenticated = localStorage.getItem("isAuth") === "true"; 
+    const userRole = "admin";
 
-        // Еслти пользователь вообще не авторизован -- Отправляем на логин
-        if (!isAutheticated) {
-            return <Navigate to="./login" replace />
-        }
-
-        // Если у сттаницы есть ограниценяи по ролям и роль юзера не подходит - уводим на глвную
-        if(allowedRoles && !allowedRoles.includes(useRole)) {
-            return <Navigate to="/" replace />;
-        }
-        // Если всё ок - рендерим дочерние страницы (маршруты)
-        return <Outlet />
+    // Если не авторизован - уводим на логин (без точки в пути)
+    if (!isAuthenticated) {
+        return <Navigate to="/login" replace />;
     }
+
+    // Если роль не подходит - уводим на главную
+    if (allowedRoles && !allowedRoles.includes(userRole)) {
+        return <Navigate to="/" replace />;
+    }
+
+    // Если всё ок - показываем страницу
+    return <Outlet />;
+}
