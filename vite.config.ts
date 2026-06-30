@@ -4,5 +4,5 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/sapremo-factory/', // Укажи здесь имя своего репозитория в слешах
+  base: '/sapremo-factory/', 
 })
