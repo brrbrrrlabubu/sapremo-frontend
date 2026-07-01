@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Table, Button, Modal, Form, Input, Select, DatePicker, Tabs, Tag, Typography, Space, Card, Row, Col, notification, Popconfirm } from "antd";
+import { Table, Button, Modal, Form, Input, Select, DatePicker, Tabs, Tag, Typography, Space, Card, Row, Col, notification, Popconfirm, InputNumber } from "antd";
 import { PlusOutlined, FileTextOutlined, CalendarOutlined, UserOutlined, CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, PrinterOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
@@ -25,7 +25,7 @@ export default function ShipmentsPage() {
   }, []);
 
   const handleCreate = (values: any) => {
-    const randomAmount = Math.floor(10 + Math.random() * 40) * 1000;
+    const randomAmount = (values.quantity || 1) * 1000;
     const docNum = `НАК-00${Math.floor(100 + Math.random() * 900)}`;
     
     dataService.addShipment({
@@ -120,7 +120,7 @@ export default function ShipmentsPage() {
       <Card bordered={true} style={{ marginBottom: 24, borderRadius: "4px", border: "1px solid #e8e8e8", boxShadow: "0 1px 2px rgba(0,0,0,0.02)" }} styles={{ body: { padding: "16px 24px" } }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px", fontWeight: 600 }}>🚚 Отгрузки товара</Title>
+            <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px", fontWeight: 600 }}> Отгрузки товара</Title>
             <Text type="secondary" style={{ fontSize: "14px", marginTop: 4, display: "block" }}>Оперативная сводка системы логистики завода. Оформление ТТН и контроль статусов.</Text>
           </div>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)} disabled={!canManage} style={{ height: "36px" }}>Создать отгрузку</Button>
@@ -157,8 +157,9 @@ export default function ShipmentsPage() {
       <Modal title="Создать накладную" open={isModalOpen} onOk={() => form.submit()} onCancel={() => setIsModalOpen(false)}>
         <Form form={form} layout="vertical" onFinish={handleCreate}>
           <Form.Item name="date" label="Дата" initialValue={dayjs()}><DatePicker style={{ width: "100%" }} /></Form.Item>
-          <Form.Item name="warehouse" label="Склад"><Select><Option value="Главный склад Завод">Главный склад Завод</Option><Option value="Транзитный склад Чуй">Транзитный склад Чуй</Option></Select></Form.Item>
-          <Form.Item name="client" label="Клиент"><Input /></Form.Item>
+          <Form.Item name="warehouse" label="Склад" rules={[{ required: true }]}><Select><Option value="Главный склад Завод">Главный склад Завод</Option><Option value="Транзитный склад Чуй">Транзитный склад Чуй</Option></Select></Form.Item>
+          <Form.Item name="client" label="Клиент" rules={[{ required: true }]}><Input /></Form.Item>
+          <Form.Item name="quantity" label="Количество" rules={[{ required: true, message: "Введите количество!" }]}><InputNumber style={{ width: "100%" }} /></Form.Item>
           <Form.Item name="comment" label="Комментарий"><Input.TextArea rows={3} /></Form.Item>
         </Form>
       </Modal>

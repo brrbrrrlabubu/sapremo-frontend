@@ -28,7 +28,7 @@ export default function FinancePage() {
       {/* Шапка с аналитикой */}
       <Card bordered={true} style={{ marginBottom: 24, borderRadius: "4px" }}>
         <div style={{ marginBottom: 24 }}>
-          <Title level={3} style={{ color: '#1890ff', margin: 0 }}>💰 Финансовая аналитика</Title>
+          <Title level={3} style={{ color: '#1890ff', margin: 0 }}> Финансовая аналитика</Title>
           <Text type="secondary">Оперативная сводка по доходам, задолженностям и движению денежных средств.</Text>
         </div>
 

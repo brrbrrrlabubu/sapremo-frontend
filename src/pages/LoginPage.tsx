@@ -1,22 +1,30 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Form, Input, Button, Typography, message } from "antd";
-import { LockOutlined, UserOutlined } from "@ant-design/icons";
+import { Card, Form, Input, Button, Typography, message, Select } from "antd";
+import { LockOutlined, UserOutlined, TeamOutlined } from "@ant-design/icons";
+import { useUserStore } from "../store/useUserStore"; // Импорт твоего стора
 
 const { Title } = Typography;
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const setUser = useUserStore((state) => state.setUser); // Получаем функцию из стора
 
   const onFinish = (values: any) => {
     setLoading(true);
-    // Имитация входа (MVP)
+    
+    // Имитация API ответа
     setTimeout(() => {
-      console.log("Вход выполнен:", values);
-      localStorage.setItem("isAuth", "true"); // Запоминаем, что юзер зашел
+      // Сохраняем пользователя в Zustand
+      setUser({
+        id: "1",
+        name: values.username,
+        role: values.role // Роль теперь берется из формы
+      });
+      
       message.success("Добро пожаловать в SAPREMO!");
-      navigate("/"); // Перекидываем на главную
+      navigate("/");
       setLoading(false);
     }, 1000);
   };
@@ -29,9 +37,21 @@ export default function LoginPage() {
           <Form.Item name="username" rules={[{ required: true, message: "Введите логин!" }]}>
             <Input prefix={<UserOutlined />} placeholder="Логин" />
           </Form.Item>
+          
+          {/* Добавляем выбор роли */}
+          <Form.Item name="role" rules={[{ required: true, message: "Выберите роль!" }]}>
+            <Select placeholder="Выберите роль" prefix={<TeamOutlined />}>
+              <Select.Option value="admin">Администратор</Select.Option>
+              <Select.Option value="factory">Завод</Select.Option>
+              <Select.Option value="manager">Менеджер</Select.Option>
+              <Select.Option value="accountant">Бухгалтер</Select.Option>
+            </Select>
+          </Form.Item>
+
           <Form.Item name="password" rules={[{ required: true, message: "Введите пароль!" }]}>
             <Input.Password prefix={<LockOutlined />} placeholder="Пароль" />
           </Form.Item>
+          
           <Button type="primary" htmlType="submit" loading={loading} block>Войти</Button>
         </Form>
       </Card>

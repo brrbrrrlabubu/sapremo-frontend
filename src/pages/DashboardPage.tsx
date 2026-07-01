@@ -55,7 +55,7 @@ export default function DashboardPage() {
   return (
     <div>
       <Card style={{ marginBottom: 24, borderRadius: "4px" }}>
-        <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px" }}>📊 Главная панель управления</Title>
+        <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px" }}> Главная панель управления</Title>
         <Text type="secondary">Оперативная сводка системы логистики завода.</Text>
       </Card>
 

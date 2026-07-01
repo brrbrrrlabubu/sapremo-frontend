@@ -180,7 +180,7 @@ export default function WarehousePage() {
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <div>
               <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px", fontWeight: 600 }}>
-                🏭 Управление складами
+                 Управление складами
               </Title>
               <Text type="secondary" style={{ fontSize: "14px", marginTop: 4, display: "block" }}>
                 Мониторинг, редактирование и удаление складских точек завода.
