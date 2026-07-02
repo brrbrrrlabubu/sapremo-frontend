@@ -31,7 +31,9 @@ const router = createBrowserRouter([
     path: "/login",
     element: <LoginPage />,
   },
-]);
+], {
+  basename: "/sapremo-frontend", // Вот здесь магия!
+});
 
 export default function AppRouter() {
   return <RouterProvider router={router} />;
