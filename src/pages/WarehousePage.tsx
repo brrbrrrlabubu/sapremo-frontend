@@ -17,6 +17,7 @@ import {
 } from "antd";
 import { PlusOutlined, DatabaseOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { useUIStore } from "../store/useUIStore"; // Импортируем наш стор интерфейса
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -32,6 +33,10 @@ interface Warehouse {
 export default function WarehousePage() {
   const currentUserRole = "admin"; 
   const canManage = currentUserRole === "admin" || currentUserRole === "director";
+
+  // Подключаем тему из глобального состояния
+  const { theme } = useUIStore();
+  const isDark = theme === "dark";
 
   const [loading, setLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -101,17 +106,24 @@ export default function WarehousePage() {
       title: "Название склада",
       dataIndex: "name",
       key: "name",
-      render: (text: string) => <Space><DatabaseOutlined style={{ color: "#1890ff" }} /> <strong>{text}</strong></Space>,
+      render: (text: string) => (
+        <Space>
+          <DatabaseOutlined style={{ color: "#1890ff" }} /> 
+          {/* Исправлено: текст названия адаптируется под тему и не сливается */}
+          <strong style={{ color: isDark ? "rgba(255, 255, 255, 0.85)" : "#000000" }}>{text}</strong>
+        </Space>
+      ),
     },
     {
       title: "Тип",
       dataIndex: "type",
       key: "type",
       render: (type: string) => {
+        // Мягкие цвета для тегов в тёмной теме, чтобы не выжигали глаза
         const config: Record<string, { color: string; text: string }> = {
-          main: { color: "blue", text: "Производственный" },
-          transit: { color: "orange", text: "Транзитный" },
-          retail: { color: "purple", text: "Розничный" },
+          main: { color: isDark ? "geekblue-dark" : "blue", text: "Производственный" },
+          transit: { color: isDark ? "volcano-dark" : "orange", text: "Транзитный" },
+          retail: { color: isDark ? "purple-dark" : "purple", text: "Розничный" },
         };
         return <Tag color={config[type]?.color}>{config[type]?.text}</Tag>;
       },
@@ -126,7 +138,7 @@ export default function WarehousePage() {
       dataIndex: "status",
       key: "status",
       render: (status: string) => (
-        <Tag color={status === "active" ? "success" : "error"}>
+        <Tag color={status === "active" ? (isDark ? "green-dark" : "success") : (isDark ? "red-dark" : "error")}>
           {status === "active" ? "Активен" : "Заблокирован"}
         </Tag>
       ),
@@ -164,15 +176,16 @@ export default function WarehousePage() {
 
   return (
     <div>
-      {/* Идеальный заголовок в рамочке, один в один как на странице отгрузок */}
+      {/* Идеальный адаптивный заголовок в рамочке */}
       <Card 
         bordered={true} 
         style={{ 
           marginBottom: 24, 
           borderRadius: "4px", 
-          border: "1px solid #e8e8e8",
-          boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
-          background: "#ffffff"
+          // Динамическая рамка и фон, которые зависят от состояния темы
+          border: `1px solid ${isDark ? "#303030" : "#e8e8e8"}`,
+          boxShadow: isDark ? "none" : "0 1px 2px rgba(0,0,0,0.02)",
+          background: isDark ? "#1f1f1f" : "#ffffff"
         }}
         styles={{ body: { padding: "16px 24px" } }}
       >
@@ -182,11 +195,11 @@ export default function WarehousePage() {
               <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px", fontWeight: 600 }}>
                  Управление складами
               </Title>
-              <Text type="secondary" style={{ fontSize: "14px", marginTop: 4, display: "block" }}>
+              {/* Исправлено: второстепенный текст плавно тускнеет в темноте */}
+              <Text type="secondary" style={{ fontSize: "14px", marginTop: 4, display: "block", color: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0, 0, 0, 0.45)" }}>
                 Мониторинг, редактирование и удаление складских точек завода.
               </Text>
             </div>
-            {/* Твоя Lottie анимация аккуратно встала рядом с текстом */}
             <div style={{ width: 40, height: 40 }}>
               <DotLottieReact 
                 src="https://lottie.host/embed/8410b0fb-7182-4160-b747-d5d14df21598/E9G9XfRsh2.json" 

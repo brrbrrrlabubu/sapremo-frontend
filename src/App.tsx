@@ -1,62 +1,96 @@
-import { ConfigProvider } from "antd";
+import React, { useEffect } from "react";
+import { ConfigProvider, theme as antTheme } from "antd";
 import AppRouter from "./router/AppRouter";
+import { useTranslation } from "react-i18next";
+import { useUIStore } from "./store/useUIStore";
+import "./i18n"; // Инициализируем локализацию
 
-// Проверь, чтобы было именно ТАК в начале функции:
+// Импортируем языковые пакеты Ant Design
+import ruRU from "antd/locale/ru_RU";
+import enUS from "antd/locale/en_US";
+
 export default function App() {
+  const { theme, lang } = useUIStore();
+  const { i18n } = useTranslation();
+
+  // Синхронизируем язык при его изменении в сторе
+  useEffect(() => {
+    i18n.changeLanguage(lang);
+  }, [lang, i18n]);
+
+  // Выбираем локаль для компонентов Ant Design
+  const currentLocale = lang === "ru" ? ruRU : enUS;
+
   return (
-// Вставляй этот ConfigProvider в самое начало рендера твоего приложения:
-<ConfigProvider
-  theme={{
-    token: {
-      
-      colorPrimary: "#1890ff", // фирменный яркий голубой цвет для кнопок, фокусов и активных элементов
-      borderRadius: 4, // Радиус скругления 
-      fontSize: 14, // Базовый шрифт интерфейса
-    },
-    components: {
-      //  Настройка "сайдбар"
-      Menu: {
-        itemBg: "transparent",
-        itemSelectedBg: "#e6f7ff", // нежно-голубой фон для активного пункта "Дашборд"
-        itemSelectedColor: "#1890ff", // цвет текста "Дашборд"
-        itemColor: "#000000", // обычный черный текст для остальных пунктов
-      },
-      // Настройка "таблицы"
-      Table: {
-        headerBg: "#fafafa", // чистый светлый фон для шапки (Name, Age, Address)
-        headerColor: "#000000", // черный цвет текста в шапке
-        headerSplitColor: "transparent", // убираем разделительные палочки между колонками
-        rowHoverBg: "#f5f5f5", // легкий серый фон при наведении на строку
-      },
-      // Настройка "вкладки"
-      Tabs: {
-        inkBarColor: "#1890ff", // та самая яркая голубая полоска под активным табом
-        itemActiveColor: "#1890ff", // цвет текста активной вкладки
-        itemColor: "#000000", // остальные вкладки просто черные
-        horizontalMargin: "0 0 16px 0",
-      },
-      // Настройка "модальное окно"
-      Modal: {
-        headerBg: "transparent",
-        paddingLG: 24,
-      },
-      // 5. Настройка для СКРИНШОТА "переключатель" (Switch)
-      Switch: {
-        handleBg: "#ffffff", // белый круглый ползунок
-      },
-      // 6. Настройка для СКРИНШОТА "поля ввода" (Input) и "Селекты"
-      Input: {
-        activeBorderColor: "#1890ff", // голубая рамка при фокусе (как на скрине example|)
-        hoverBorderColor: "#40a9ff",
-      },
-      Select: {
-        activeBorderColor: "#1890ff", // голубая рамка при открытом селекте (как у Lucy)
-      }
-    },
-  }}
->
-  {/* Тут идет твой Layout и роутер */}
-  <AppRouter /> 
-</ConfigProvider>
+    <ConfigProvider
+      locale={currentLocale}
+      theme={{
+        // Включаем динамический алгоритм темы
+        algorithm: theme === "dark" ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
+        token: {
+          colorPrimary: "#1890ff", // фирменный яркий голубой цвет
+          borderRadius: 4,
+          fontSize: 14,
+          
+          // Глобальное исправление фонов рабочих областей во всех модулях
+          colorBgLayout: theme === "dark" ? "#141414" : "#f5f5f5",
+          // Тот самый не ослепляющий цвет для подложек, форм и карточек
+          colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff", 
+          
+          // Автоматическая инверсия текста для стопроцентной читаемости
+          colorText: theme === "dark" ? "rgba(255, 255, 255, 0.85)" : "#000000",
+          colorTextHeading: theme === "dark" ? "#ffffff" : "#1f1f1f",
+          colorBorder: theme === "dark" ? "#303030" : "#d9d9d9",
+        },
+        components: {
+          // Настройка "сайдбар"
+          Menu: {
+            itemBg: "transparent",
+            itemSelectedBg: theme === "dark" ? "#111a2c" : "#e6f7ff", // темнее для темной темы
+            itemSelectedColor: "#1890ff",
+            itemColor: theme === "dark" ? "rgba(255, 255, 255, 0.85)" : "#000000", // адаптивный цвет текста
+          },
+          // Настройка "таблицы"
+          Table: {
+            headerBg: theme === "dark" ? "#1f1f1f" : "#fafafa", // адаптивный фон шапки
+            headerColor: theme === "dark" ? "rgba(255, 255, 255, 0.85)" : "#000000",
+            headerSplitColor: "transparent",
+            rowHoverBg: theme === "dark" ? "#262626" : "#f5f5f5",
+          },
+          // Настройка "вкладки"
+          Tabs: {
+            inkBarColor: "#1890ff",
+            itemActiveColor: "#1890ff",
+            itemColor: theme === "dark" ? "rgba(255, 255, 255, 0.65)" : "#000000",
+            horizontalMargin: "0 0 16px 0",
+          },
+          // Настройка "модальное окно"
+          Modal: {
+            headerBg: "transparent",
+            paddingLG: 24,
+          },
+          // Настройка "переключатель" (Switch)
+          Switch: {
+            handleBg: "#ffffff",
+          },
+          // Настройка "поля ввода" (Input) и "Селекты"
+          Input: {
+            activeBorderColor: "#1890ff",
+            hoverBorderColor: "#40a9ff",
+            colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
+          },
+          Select: {
+            activeBorderColor: "#1890ff",
+            colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
+          },
+          // Настройка "карточки" (исправляет блоки в Финансовой аналитике)
+          Card: {
+            colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
+          },
+        },
+      }}
+    >
+      <AppRouter />
+    </ConfigProvider>
   );
 }
