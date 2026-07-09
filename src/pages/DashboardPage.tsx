@@ -10,32 +10,22 @@ import {
 import { dataService } from '../services/dataService';
 import type { Shipment } from '../services/dataService';
 import noDataIcon from '../assets/No-Data.svg';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text } = Typography;
 
-const CustomNoData: React.FC = () => (
-  <div style={{ textAlign: 'center', padding: '32px 0' }}>
-    <img src={noDataIcon} alt="No Data" style={{ width: '120px', height: '120px', marginBottom: '4px' }} />
-  </div>
-);
-
-const recentActivityColumns = [
-  { title: '№ Документа', dataIndex: 'docNumber', key: 'docNumber', render: (text: string) => <Text strong style={{ color: '#1890ff' }}>{text}</Text> },
-  { title: 'Склад назначения', dataIndex: 'warehouse', key: 'warehouse' },
-  { title: 'Статус', dataIndex: 'status', key: 'status', render: (status: string) => {
-      const config: any = {
-        shipped: { color: "success", label: "Принято" },
-        transit: { color: "processing", label: "В пути" },
-        discrepancy: { color: "error", label: "С расхождениями" },
-        defective: { color: "warning", label: "Брак" },
-      };
-      const current = config[status] || { color: "default", label: status };
-      return <Tag color={current.color}>{current.label}</Tag>;
-    },
-  },
-];
+const CustomNoData: React.FC = () => {
+  const { t } = useTranslation();
+  return (
+    <div style={{ textAlign: 'center', padding: '32px 0' }}>
+      <img src={noDataIcon} alt="No Data" style={{ width: '120px', height: '120px', marginBottom: '4px' }} />
+      <div style={{ color: '#999' }}>{t('dashboard.noData')}</div>
+    </div>
+  );
+};
 
 export default function DashboardPage() {
+  const { t } = useTranslation();
   const [shipments, setShipments] = useState<Shipment[]>(dataService.getShipments());
 
   useEffect(() => {
@@ -48,15 +38,31 @@ export default function DashboardPage() {
   const transitCount = shipments.filter(s => s.status === "transit").length;
 
   const metrics = [
-    { title: "Остатки товаров", value: totalItems, suffix: " шт.", icon: <InboxOutlined style={{ fontSize: '24px', color: '#1890ff' }} />, color: "#e6f7ff", trend: "Обновляется автоматически" },
-    { title: "Всего отгрузок", value: totalShipmentsCount, suffix: " док.", icon: <TruckOutlined style={{ fontSize: '24px', color: '#52c41a' }} />, color: "#f6ffed", trend: `Машин в пути: ${transitCount}` }
+    { title: t('dashboard.stock'), value: totalItems, suffix: ` ${t('dashboard.pcs')}`, icon: <InboxOutlined style={{ fontSize: '24px', color: '#1890ff' }} />, color: "#e6f7ff", trend: t('dashboard.updating') },
+    { title: t('dashboard.totalShipments'), value: totalShipmentsCount, suffix: ` ${t('dashboard.docs')}`, icon: <TruckOutlined style={{ fontSize: '24px', color: '#52c41a' }} />, color: "#f6ffed", trend: `${t('dashboard.trucksInTransit')} ${transitCount}` }
+  ];
+
+  const recentActivityColumns = [
+    { title: t('dashboard.docNum'), dataIndex: 'docNumber', key: 'docNumber', render: (text: string) => <Text strong style={{ color: '#1890ff' }}>{text}</Text> },
+    { title: t('dashboard.destWarehouse'), dataIndex: 'warehouse', key: 'warehouse' },
+    { title: t('dashboard.status'), dataIndex: 'status', key: 'status', render: (status: string) => {
+        const config: any = {
+          shipped: { color: "success", label: t('status.shipped') },
+          transit: { color: "processing", label: t('status.transit') },
+          discrepancy: { color: "error", label: t('status.discrepancy') },
+          defective: { color: "warning", label: t('status.defective') },
+        };
+        const current = config[status] || { color: "default", label: status };
+        return <Tag color={current.color}>{current.label}</Tag>;
+      },
+    },
   ];
 
   return (
     <div>
       <Card style={{ marginBottom: 24, borderRadius: "4px" }}>
-        <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px" }}> Главная панель управления</Title>
-        <Text type="secondary">Оперативная сводка системы логистики завода.</Text>
+        <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px" }}> {t('dashboard.title')}</Title>
+        <Text type="secondary">{t('dashboard.subtitle')}</Text>
       </Card>
 
       <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
@@ -78,25 +84,25 @@ export default function DashboardPage() {
 
       <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
         <Col span={24}>
-            <Card title="Последняя активность" bordered={true} style={{ borderRadius: '4px' }}>
-                <Table columns={recentActivityColumns} dataSource={shipments} rowKey="id" pagination={false} locale={{ emptyText: <CustomNoData /> }} />
+            <Card title={t('dashboard.recentActivity')} bordered={true} style={{ borderRadius: '4px' }}>
+                <Table columns={recentActivityColumns} dataSource={shipments} rowKey="id" pagination={false} locale={{ emptyText: <CustomNoData /> }} scroll={{ x: 'max-content' }} />
             </Card>
         </Col>
       </Row>
 
       <Row gutter={[16, 16]}>
         <Col span={24}>
-          <Card title="Поддержка и связь" bordered={true} style={{ borderRadius: '4px' }}>
+          <Card title={t('dashboard.support')} bordered={true} style={{ borderRadius: '4px' }}>
             <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <PhoneOutlined /> <Text strong>Менеджер склада:</Text> <Text>+996 555 123 456</Text>
+                <PhoneOutlined /> <Text strong>{t('dashboard.manager')}</Text> <Text>+996 555 123 456</Text>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <MailOutlined /> <Text strong>Email:</Text> <Text>support@sapremo.kg</Text>
+                <MailOutlined /> <Text strong>{t('dashboard.email')}</Text> <Text>support@sapremo.kg</Text>
               </div>
             </div>
             <Text type="secondary" style={{ display: 'block', marginTop: '12px' }}>
-              Если возникли вопросы по приёмке или расхождениям, свяжитесь с ответственным менеджером.
+              {t('dashboard.supportDesc')}
             </Text>
           </Card>
         </Col>

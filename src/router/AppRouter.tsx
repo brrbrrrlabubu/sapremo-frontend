@@ -8,6 +8,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import LoginPage from "../pages/LoginPage";
 import AnalyticsPage from "../pages/AnalyticsPage";
 import ReportsPage from "../pages/ReportsPage";
+import WarehouseRequestsPage from "../pages/WarehouseRequestsPage";
 
 const router = createBrowserRouter([
   {
@@ -18,6 +19,7 @@ const router = createBrowserRouter([
         element: <ProtectedRoute allowedRoles={["admin", "manager", "factory", "accountant"]} />,
         children: [
           { path: "/", element: <DashboardPage /> },
+          { path: "/requests", element: <WarehouseRequestsPage /> },
           { path: "/shipments", element: <ShipmentsPage /> },
           { path: "/warehouses", element: <WarehousePage /> },
           { path: "/finance", element: <FinancePage /> },

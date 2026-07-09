@@ -1,12 +1,11 @@
 import { message } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { 
-  WarehouseRequest, 
-  RequestStatus, 
   isValidStatusTransition, 
   checkStockAvailability, 
   calculateUpdatedStock 
 } from '../utils/requestAlgorithms';
+import type { WarehouseRequest, RequestStatus } from '../utils/requestAlgorithms';
 
 // Описываем контракт для стора Нурсултана, чтобы TypeScript не ругался до того,
 // как Нурсултан напишет свой Zustand-стор.

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { ConfigProvider, theme as antTheme } from "antd";
 import AppRouter from "./router/AppRouter";
 import { useTranslation } from "react-i18next";
