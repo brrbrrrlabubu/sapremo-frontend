@@ -1,32 +1,52 @@
+import { useState, useEffect } from "react";
 import "./App.css";
-import { ConfigProvider } from "antd";
+import { ConfigProvider, theme, Layout } from "antd";
 import AppRouter from "./router/AppRouter";
+const { Content } = Layout;
 
-// Проверь, чтобы было именно ТАК в начале функции:
 export default function App() {
+  const [ isDarkMode ] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+    document.body.style.backgroundColor = isDarkMode ? "#141414" : "#f0f2f5";
+  }, [isDarkMode]);
+
   return (
-    <ConfigProvider
-      theme={{
-        //Здесь мы настраиваем глобальные цвета системы
+    <ConfigProvider 
+      theme={{ 
+        algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
-          colorPrimary: "#1890ff", //Основной цвет(кнопки, активные элементы)
-          borderRadius: 6, // Скругление углов у всех компонентов AntD
-          fontFamily: "Inter, sans-serif", // Глобальный шрифт
-          colorSuccess: "#52c41a", //Успех, "Доставлено", "В наличии" (зеленый)
-          colorWarning: "#fa8c16", //Предупреждение, "В пути", "Ожидает"(оранжевый)
-          colorError: "#ff4d4f", // Ошибка, "Отменено" , "Дефицит"(красный)
+          colorPrimary: "#1890ff", 
+          colorText: isDarkMode ? "#ffffff" : "#000000",
         },
-        //А здесь можно точечно настраивать отдельные компоненты, например Сайдбар или Меню
         components: {
+          // ЦЕНТР УПРАВЛЕНИЯ ЦВЕТАМИ
           Menu: {
-            itemBg: "#ffffff",
-            itemSelectedBg: "#e6f7ff",
+            darkItemBg: isDarkMode ? "#000c17": "#001529", 
+            darkItemSelectedBg: "#1890ff",
+            darkItemSelectedColor: "#ffffff",
           },
-        },
+          Tabs: {
+            itemColor: isDarkMode ? "#ffffff" : "#000000",
+            itemSelectedColor: "#1890ff",
+          },
+          Skeleton: {
+            color: isDarkMode ? "#333" : "#f2f2f2",
+            colorGradientEnd: isDarkMode ? "#444" : "#e6e6e6",
+          },
+          FloatButton: {
+            colorPrimary: isDarkMode ? "#002766" : "#1890ff",
+            colorPrimaryHover: isDarkMode ? "#0050b3" : "#40a9ff",
+          }
+        }
       }}
     >
-      {/* Запускаем наш движок маршрутов */}
-      <AppRouter />
+      <Layout style={{ minHeight: '100vh', background: 'transparent' }}>
+        <Content>
+          <AppRouter />
+        </Content>
+      </Layout>
     </ConfigProvider>
   );
 }

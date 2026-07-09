@@ -8,6 +8,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import LoginPage from "../pages/LoginPage";
 import AnalyticsPage from "../pages/AnalyticsPage";
 import ReportsPage from "../pages/ReportsPage";
+import InventoryPage from "../pages/InventoryPage";
 
 export default function AppRouter() {
   return (
@@ -22,6 +23,7 @@ export default function AppRouter() {
             <Route path="finance" element={<FinancePage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="inventory" element={<InventoryPage />} />
           </Route>
         </Route>
         

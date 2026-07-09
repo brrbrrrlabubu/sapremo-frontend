@@ -1,7 +1,7 @@
-import { Card, Typography, List, Button, Row, Col, Space, notification } from "antd";
+import { Card, List, Button, Row, Col, Space, notification } from "antd";
 import { FilePdfOutlined, FileExcelOutlined, DownloadOutlined, BarChartOutlined } from "@ant-design/icons";
+import PageHeader from "../components/PageHeader";
 
-const { Title, Text } = Typography;
 
 export default function ReportsPage() {
   // Функция-заглушка для имитации скачивания
@@ -21,19 +21,7 @@ export default function ReportsPage() {
 
   return (
     <div>
-      {/* Шапка в стиле Главной */}
-      <Card 
-        bordered={true} 
-        style={{ marginBottom: 24, borderRadius: "4px", border: "1px solid #e8e8e8" }} 
-        styles={{ body: { padding: "20px 24px" } }}
-      >
-        <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px" }}>
-          Отчеты
-        </Title>
-        <Text type="secondary" style={{ fontSize: "14px", marginTop: 4, display: "block" }}>
-          Формирование и экспорт аналитических данных для руководства завода.
-        </Text>
-      </Card>
+      <PageHeader title="📑 Отчеты" />
 
       {/* Список отчетов */}
       <Row gutter={16}>

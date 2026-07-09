@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Row, Col, Card, Statistic, Typography, Table, Tag, Space } from 'antd';
 import { 
   ArrowUpOutlined, 
@@ -7,11 +7,11 @@ import {
   PhoneOutlined,
   MailOutlined
 } from '@ant-design/icons';
-import { dataService } from '../services/dataService';
-import type { Shipment } from '../services/dataService';
+import { useShipmentStore } from '../store/shipmentStore';
 import noDataIcon from '../assets/No-Data.svg';
+import PageHeader from "../components/PageHeader"; 
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const CustomNoData: React.FC = () => (
   <div style={{ textAlign: 'center', padding: '32px 0' }}>
@@ -36,12 +36,8 @@ const recentActivityColumns = [
 ];
 
 export default function DashboardPage() {
-  const [shipments, setShipments] = useState<Shipment[]>(dataService.getShipments());
-
-  useEffect(() => {
-    const unsubscribe = dataService.subscribe(() => setShipments(dataService.getShipments()));
-    return () => unsubscribe();
-  }, []);
+  // Теперь берем данные из единого источника
+  const { shipments } = useShipmentStore();
 
   const totalItems = 12540 + (shipments.length * 150);
   const totalShipmentsCount = shipments.length;
@@ -54,10 +50,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <Card style={{ marginBottom: 24, borderRadius: "4px" }}>
-        <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px" }}>📊 Главная панель управления</Title>
-        <Text type="secondary">Оперативная сводка системы логистики завода.</Text>
-      </Card>
+      <PageHeader title="📊 Главная панель управления" />
 
       <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
         {metrics.map((item, index) => (
@@ -79,7 +72,13 @@ export default function DashboardPage() {
       <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
         <Col span={24}>
             <Card title="Последняя активность" bordered={true} style={{ borderRadius: '4px' }}>
-                <Table columns={recentActivityColumns} dataSource={shipments} rowKey="id" pagination={false} locale={{ emptyText: <CustomNoData /> }} />
+              <Table 
+                columns={recentActivityColumns} 
+                dataSource={shipments} 
+                rowKey="id" 
+                pagination={false} 
+                locale={{ emptyText: <CustomNoData /> }} 
+              />
             </Card>
         </Col>
       </Row>

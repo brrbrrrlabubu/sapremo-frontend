@@ -1,7 +1,8 @@
-import { Card, Row, Col, Typography, Statistic, Table } from "antd";
+import { Card, Row, Col, Statistic, Table } from "antd";
 import { LineChartOutlined, TeamOutlined, FileTextOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 
-const { Title, Text } = Typography;
+import PageHeader from "../components/PageHeader";
+
 
 export default function AnalyticsPage() {
   const dataSource = [
@@ -17,19 +18,7 @@ export default function AnalyticsPage() {
 
   return (
     <div>
-      {/* Прямоугольник-шапка, как на Главной */}
-      <Card 
-        bordered={true} 
-        style={{ marginBottom: 24, borderRadius: "4px", border: "1px solid #e8e8e8" }} 
-        styles={{ body: { padding: "20px 24px" } }}
-      >
-        <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px" }}>
-          Аналитика и отчетность
-        </Title>
-        <Text type="secondary" style={{ fontSize: "14px", marginTop: 4, display: "block" }}>
-          Мониторинг ключевых показателей эффективности логистической системы завода.
-        </Text>
-      </Card>
+      <PageHeader title="💷 Аналитика" />
 
       {/* Блок с показателями */}
       <Row gutter={16} style={{ marginBottom: 24 }}>

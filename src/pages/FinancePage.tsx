@@ -1,8 +1,7 @@
 
-import { Table, Card, Typography, Row, Col, Statistic, Tabs, Tag } from "antd";
+import { Table, Card, Row, Col, Statistic, Tabs, Tag } from "antd";
 import { RiseOutlined, FallOutlined, BankOutlined } from "@ant-design/icons";
-
-const { Title, Text } = Typography;
+import PageHeader from "../components/PageHeader";
 
 export default function FinancePage() {
   // Имитация данных (замени на реальный вызов из твоего dataService, если нужно)
@@ -26,11 +25,8 @@ export default function FinancePage() {
   return (
     <div>
       {/* Шапка с аналитикой */}
+      <PageHeader title="💰 Финансовая аналитика" />
       <Card bordered={true} style={{ marginBottom: 24, borderRadius: "4px" }}>
-        <div style={{ marginBottom: 24 }}>
-          <Title level={3} style={{ color: '#1890ff', margin: 0 }}>💰 Финансовая аналитика</Title>
-          <Text type="secondary">Оперативная сводка по доходам, задолженностям и движению денежных средств.</Text>
-        </div>
 
         <Row gutter={16}>
           <Col span={8}>
