@@ -1,9 +1,5 @@
 {
-<<<<<<< HEAD
   "name": "factory-panel",
-=======
-  "name": "sapremo-factory",
->>>>>>> 05f595a642692ed936fc7cb3f566484a0905ccec
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -14,12 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-<<<<<<< HEAD
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "zustand": "^4.5.2",
-    "zod": "^3.23.8"
-=======
     "@ant-design/icons": "^6.2.5",
     "@lottiefiles/dotlottie-react": "^0.19.4",
     "antd": "^6.4.4",
@@ -28,8 +18,9 @@
     "dexie-react-hooks": "^4.4.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "react-router-dom": "^7.18.0"
->>>>>>> 05f595a642692ed936fc7cb3f566484a0905ccec
+    "react-router-dom": "^7.18.0",
+    "zustand": "^4.5.2",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -40,17 +31,8 @@
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
-<<<<<<< HEAD
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12"
   }
 }
-=======
-    "globals": "^17.6.0",
-    "typescript": "~6.0.2",
-    "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
-  }
-}
->>>>>>> 05f595a642692ed936fc7cb3f566484a0905ccec

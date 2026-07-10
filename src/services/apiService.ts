@@ -1,25 +1,31 @@
-const BASE_URL = 'https://api.factory-panel.com'
+import axios from 'axios'
+import { z } from 'zod'
 
-async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        ...options,
-    })
+const BASE_URL = (import.meta as { env: { VITE_API_URL?: string } }).env.VITE_API_URL || 'http://localhost:8000'
 
-    if (!response.ok) {
-        throw new Error(`Ошибка: ${response.status}`)
-    }
-
-    return response.json()
-}
+export const apiClient = axios.create({
+    baseURL: BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+})
 
 export const api = {
-    get: <T>(endpoint: string) => request<T>(endpoint),
-    post: <T>(endpoint: string, body: unknown) =>
-        request<T>(endpoint, {
-            method: 'POST',
-            body: JSON.stringify(body),
+    get: <T>(endpoint: string, schema?: z.ZodType<T>) =>
+        apiClient.get<T>(endpoint).then((res) => {
+            if (schema) return schema.parse(res.data)
+            return res.data
         }),
+    post: <T>(endpoint: string, body: unknown, schema?: z.ZodType<T>) =>
+        apiClient.post<T>(endpoint, body).then((res) => {
+            if (schema) return schema.parse(res.data)
+            return res.data
+        }),
+    put: <T>(endpoint: string, body: unknown, schema?: z.ZodType<T>) =>
+        apiClient.put<T>(endpoint, body).then((res) => {
+            if (schema) return schema.parse(res.data)
+            return res.data
+        }),
+    delete: <T>(endpoint: string) =>
+        apiClient.delete<T>(endpoint).then((res) => res.data),
 }
