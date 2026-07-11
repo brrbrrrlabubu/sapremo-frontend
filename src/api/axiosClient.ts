@@ -1,50 +1,97 @@
 import axios from 'axios';
+import type { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 
-//Общий экземпляр для будущих запросов
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.sapremo.com/v1';
 
-const axiosClient = axios.create({
-
-    //Сюда потом встами реальный URL бэкенда, пока стоит заглушка
-    
-    baseURL: 'https://api.sapremo.com/v1', 
-    timeout: 10000, // Если сервер не отвечает 10 секунд - отменяем запрос 
-    headers: {
-        'Content-Type': 'application/json',
-    },
+export const axiosClient: AxiosInstance = axios.create({
+  baseURL: BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 15000,
 });
-// Перехватчик Направляемых запросов 
 
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = [];
+
+const processQueue = (error: unknown, token: string | null = null): void => {
+  failedQueue.forEach((prom) => {
+    if (token) {
+      prom.resolve(token);
+    } else {
+      prom.reject(error);
+    }
+  });
+  failedQueue = [];
+};
+
+// Request Interceptor: внедрение Access Token в заголовки
 axiosClient.interceptors.request.use(
-    (config) => {
-        // ВРЕМЕННАЯ ЗАГЛУШКА 
-        const token = localStorage.getItem("token") || "temporary_mock_token";
-
-        if (token && config.headers) {
-            // Автоматически добавляем токен в каждый запрос для авторизации
-            config.headers.Authorization = `Bearer &{token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
+  (config: InternalAxiosRequestConfig) => {
+    const accessToken = localStorage.getItem('access_token');
+    if (accessToken && config.headers) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
+    return config;
+  },
+  (error) => Promise.reject(error)
 );
-// Перехватчик Входящих ответов (Response Interceptor)
-// Он ловит ответы от сервера до того, как они попадут в компоненты
+
+// Response Interceptor: автоматический Silent Refresh токенов при 401 ошибке
 axiosClient.interceptors.response.use(
-    (response) => response, 
-    (error) => {
-        // Если сервер ответил 401 (Токен просрочен или неверный)
-        if (error.response && error.response.status === 401) {
-            console.warn("Сессия устарела. Перенаправление на логин...");
-            // Здесь будет логика очистки хранилища и редиректа, когда Нурсултан закончит стейт
-            localStorage.removeItem("token");
-            window.location.href = "./login";
-        }
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
-        return Promise.reject(error);
+    if (!error.response || error.response.status !== 401 || originalRequest._retry) {
+      return Promise.reject(error);
     }
+
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        failedQueue.push({ resolve, reject });
+      })
+        .then((token) => {
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+          }
+          return axiosClient(originalRequest);
+        })
+        .catch((err) => Promise.reject(err));
+    }
+
+    originalRequest._retry = true;
+    isRefreshing = true;
+
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!refreshToken) {
+      isRefreshing = false;
+      // Перенаправляем на логику логаута/очистки стейта, если refresh-токен отсутствует
+      return Promise.reject(error);
+    }
+
+    try {
+      const response = await axios.post<{ access: string }>(`${BASE_URL}/auth/refresh`, {
+        refresh: refreshToken,
+      });
+
+      const { access } = response.data;
+      localStorage.setItem('access_token', access);
+      
+      processQueue(null, access);
+      isRefreshing = false;
+
+      if (originalRequest.headers) {
+        originalRequest.headers.Authorization = `Bearer ${access}`;
+      }
+      return axiosClient(originalRequest);
+    } catch (refreshError) {
+      processQueue(refreshError, null);
+      isRefreshing = false;
+      // Принудительный сброс сессии
+      localStorage.clear();
+      window.location.href = '/login';
+      return Promise.reject(refreshError);
+    }
+  }
 );
-
-
-export default axiosClient;

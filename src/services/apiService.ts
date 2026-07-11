@@ -1,4 +1,4 @@
-const BASE_URL = 'https://api.factory-panel.com'
+const BASE_URL = 'https://factory-service-ab3j.onrender.com'
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
