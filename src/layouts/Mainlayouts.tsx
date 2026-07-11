@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Layout, Menu, theme } from "antd";
+import { Layout, Menu, theme as antTheme } from "antd"; // Переименовали импорт theme в antTheme
 import { 
   DashboardOutlined,
   ShoppingCartOutlined,
@@ -10,14 +10,18 @@ import {
   FileTextOutlined
 } from "@ant-design/icons";
 import { Outlet, Link, useLocation } from "react-router-dom";
+import { ThemeLangSelector } from "../components/ThemeLangSelector";
 
 const { Header, Sider, Content } = Layout;
 
 export default function MainLayout() {
-  const { token} = theme.useToken(); 
+  const { token } = antTheme.useToken(); // Используем antTheme
   
   const [isOnline, setIsOnline] = useState<boolean>(true); 
   const location = useLocation();
+  
+  // Переименуем переменную из стора, чтобы не конфликтовала
+
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -47,6 +51,7 @@ export default function MainLayout() {
         />
       </Sider>
       
+      {/* Основной контент */}
       <Layout>
         <Header style={{ 
           background: token.colorBgContainer,
@@ -57,6 +62,7 @@ export default function MainLayout() {
           height: "64px",
           borderBottom: `1px solid ${token.colorBorder}`
         }}>
+          <ThemeLangSelector />
           <div 
             onClick={() => setIsOnline(!isOnline)} 
             style={{ 

@@ -1,24 +1,24 @@
 import { Navigate, Outlet } from "react-router-dom";
+import { useUserStore } from "../store/useUserStore"; // Импортируем стор
 
-interface ProtectedRoutePros {
-    allowedRoles?: string[];
+interface ProtectedRouteProps {
+  allowedRoles?: string[];
 }
 
-export default function ProtectedRoute({ allowedRoles }: ProtectedRoutePros) {
-    // ВРЕМЕННАЯ ЗАГЛУШКА: имитируем, что пользователь залогинен
-    const isAuthenticated = localStorage.getItem("isAuth") === "true"; 
-    const userRole = "admin";
+export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
+  // Получаем пользователя из стора
+  const user = useUserStore((state) => state.user);
 
-    // Если не авторизован - уводим на логин (без точки в пути)
-    if (!isAuthenticated) {
-        return <Navigate to="/login" replace />;
-    }
+  // 1. Если пользователя нет (null) - уводим на логин
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
-    // Если роль не подходит - уводим на главную
-    if (allowedRoles && !allowedRoles.includes(userRole)) {
-        return <Navigate to="/" replace />;
-    }
+  // 2. Если роль есть, но она не входит в разрешенный список - уводим на главную
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/" replace />;
+  }
 
-    // Если всё ок - показываем страницу
-    return <Outlet />;
+  // 3. Если всё ок - показываем страницу
+  return <Outlet />;
 }
