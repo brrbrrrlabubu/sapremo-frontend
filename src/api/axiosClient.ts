@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.sapremo.com/v1';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://factory-service-ab3j.onrender.com/v1';
 
 export const axiosClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,

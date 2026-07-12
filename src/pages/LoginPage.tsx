@@ -1,32 +1,45 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Card, Form, Input, Button, Typography, message, Select } from "antd";
 import { LockOutlined, UserOutlined, TeamOutlined } from "@ant-design/icons";
-import { useUserStore } from "../store/useUserStore"; // Импорт твоего стора
+import { useUserStore } from "../store/useUserStore";
+import { AuthService } from "../services/auth.service";
 
 const { Title } = Typography;
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
-  const setUser = useUserStore((state) => state.setUser); // Получаем функцию из стора
+  const { setUser, syncAuthFromStorage } = useUserStore();
 
-  const onFinish = (values: any) => {
+  // Возвращаемся на страницу, с которой пользователь был перенаправлен на логин
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? '/';
+
+  const onFinish = async (values: { username: string; password: string; role: 'admin' | 'factory' | 'manager' | 'accountant' }) => {
     setLoading(true);
-    
-    // Имитация API ответа
-    setTimeout(() => {
-      // Сохраняем пользователя в Zustand
+    try {
+      // Реальный API-вызов: токены сохраняются в localStorage внутри AuthService.login()
+      await AuthService.login(values.username, values.password);
+
+      // Синхронизируем Zustand-стор с обновлённым токеном
+      syncAuthFromStorage();
+
+      // Сохраняем профиль пользователя (роль берётся из формы до появления /auth/me эндпоинта)
       setUser({
-        id: "1",
+        id: crypto.randomUUID(),
         name: values.username,
-        role: values.role // Роль теперь берется из формы
+        role: values.role,
       });
-      
+
       message.success("Добро пожаловать в SAPREMO!");
-      navigate("/");
+      navigate(from, { replace: true });
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Ошибка авторизации. Проверьте учётные данные.';
+      message.error(errorMsg);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -38,9 +51,9 @@ export default function LoginPage() {
             <Input prefix={<UserOutlined />} placeholder="Логин" />
           </Form.Item>
           
-          {/* Добавляем выбор роли */}
+          {/* Выбор роли сотрудника (временно: до появления /auth/me эндпоинта на бэке) */}
           <Form.Item name="role" rules={[{ required: true, message: "Выберите роль!" }]}>
-            <Select placeholder="Выберите роль" prefix={<TeamOutlined />}>
+            <Select placeholder="Выберите роль" suffixIcon={<TeamOutlined />}>
               <Select.Option value="admin">Администратор</Select.Option>
               <Select.Option value="factory">Завод</Select.Option>
               <Select.Option value="manager">Менеджер</Select.Option>
