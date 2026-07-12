@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://factory-service-ab3j.onrender.com/v1';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://factory-service-ab3j.onrender.com/api/factory';
 
 export const axiosClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -71,12 +71,13 @@ axiosClient.interceptors.response.use(
     }
 
     try {
-      const response = await axios.post<{ access: string }>(`${BASE_URL}/auth/refresh`, {
+      const response = await axios.post<{ access: string; refresh: string }>(`${BASE_URL}/auth/refresh/`, {
         refresh: refreshToken,
       });
 
-      const { access } = response.data;
+      const { access, refresh } = response.data;
       localStorage.setItem('access_token', access);
+      localStorage.setItem('refresh_token', refresh);
       
       processQueue(null, access);
       isRefreshing = false;

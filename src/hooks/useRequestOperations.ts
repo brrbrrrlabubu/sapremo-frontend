@@ -1,4 +1,4 @@
-import { message } from 'antd';
+import type { MessageInstance } from 'antd/es/message/interface';
 import { useTranslation } from 'react-i18next';
 import { useCallback, useState } from 'react';
 import { SyncQueue } from '../services/syncQueue';
@@ -17,7 +17,7 @@ interface RequestStorePlaceholder {
   factoryStock: Record<string, number>;
 }
 
-export const useRequestOperations = (store: RequestStorePlaceholder) => {
+export const useRequestOperations = (store: RequestStorePlaceholder, message: MessageInstance) => {
   const { t } = useTranslation();
 
   const handleStatusChange = async (request: WarehouseRequest, nextStatus: RequestStatus) => {

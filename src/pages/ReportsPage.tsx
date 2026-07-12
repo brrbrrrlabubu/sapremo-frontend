@@ -1,4 +1,4 @@
-import { Card, Typography, List, Button, Row, Col, Space, notification } from "antd";
+import { Card, Typography, List, Button, Row, Col, Space, App } from "antd";
 import { FilePdfOutlined, FileExcelOutlined, DownloadOutlined, BarChartOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 
@@ -6,6 +6,7 @@ const { Title, Text } = Typography;
 
 export default function ReportsPage() {
   const { t } = useTranslation();
+  const { notification } = App.useApp();
 
   const handleDownload = (fileName: string) => {
     notification.success({

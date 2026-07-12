@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { z } from 'zod'
 
-const BASE_URL = (import.meta as { env: { VITE_API_URL?: string } }).env.VITE_API_URL || 'https://factory-service-ab3j.onrender.com'
+const BASE_URL = (import.meta as { env: { VITE_API_URL?: string } }).env.VITE_API_URL || 'https://factory-service-ab3j.onrender.com/api/factory'
 
 export const apiClient = axios.create({
     baseURL: BASE_URL,

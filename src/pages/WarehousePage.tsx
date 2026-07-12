@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Table, Button, Modal, Form, Input, Select, Skeleton, Empty, Space, Tag, Typography, Card, notification, Popconfirm } from "antd";
+import { Table, Button, Modal, Form, Input, Select, Skeleton, Empty, Space, Tag, Typography, Card, App, Popconfirm } from "antd";
 import { PlusOutlined, DatabaseOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { useUIStore } from "../store/useUIStore";
@@ -21,6 +21,7 @@ export default function WarehousePage() {
   const currentUserRole = "admin"; 
   const canManage = currentUserRole === "admin" || currentUserRole === "director";
 
+  const { notification } = App.useApp();
   const { theme } = useUIStore();
   const isDark = theme === "dark";
 

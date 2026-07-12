@@ -4,7 +4,7 @@ import type { LoginResponse } from '../types/api.types';
 
 export class AuthService {
   public static async login(username: string, password: string): Promise<LoginResponse> {
-    const response = await axiosClient.post('/auth/login', { username, password });
+    const response = await axiosClient.post('/auth/login/', { username, password });
     // Строгая runtime-валидация ответа сервера через Zod схему
     const validatedData = LoginResponseSchema.parse(response.data);
     
@@ -17,7 +17,7 @@ export class AuthService {
   public static async logout(): Promise<void> {
     try {
       // Отправляем топик логаута, чтобы инвалидировать сессию на сервере
-      await axiosClient.post('/auth/logout');
+      await axiosClient.post('/auth/logout/');
     } finally {
       // Очищаем локальное хранилище в любом случае для безопасности данных клиента
       localStorage.removeItem('access_token');

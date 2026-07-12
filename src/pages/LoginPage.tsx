@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Card, Form, Input, Button, Typography, message, Select } from "antd";
+import { Card, Form, Input, Button, Typography, App, Select } from "antd";
 import { LockOutlined, UserOutlined, TeamOutlined } from "@ant-design/icons";
 import { useUserStore } from "../store/useUserStore";
 import { AuthService } from "../services/auth.service";
@@ -10,26 +10,27 @@ const { Title } = Typography;
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
   const { setUser, syncAuthFromStorage } = useUserStore();
 
   // Возвращаемся на страницу, с которой пользователь был перенаправлен на логин
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? '/';
 
-  const onFinish = async (values: { username: string; password: string; role: 'admin' | 'factory' | 'manager' | 'accountant' }) => {
+  const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true);
     try {
       // Реальный API-вызов: токены сохраняются в localStorage внутри AuthService.login()
-      await AuthService.login(values.username, values.password);
+      const loginData = await AuthService.login(values.username, values.password);
 
       // Синхронизируем Zustand-стор с обновлённым токеном
       syncAuthFromStorage();
 
-      // Сохраняем профиль пользователя (роль берётся из формы до появления /auth/me эндпоинта)
+      // Сохраняем профиль пользователя из ответа API
       setUser({
-        id: crypto.randomUUID(),
-        name: values.username,
-        role: values.role,
+        id: loginData.user.id,
+        name: loginData.user.full_name || loginData.user.username,
+        role: loginData.user.role as any,
       });
 
       message.success("Добро пожаловать в SAPREMO!");
@@ -51,15 +52,6 @@ export default function LoginPage() {
             <Input prefix={<UserOutlined />} placeholder="Логин" />
           </Form.Item>
           
-          {/* Выбор роли сотрудника (временно: до появления /auth/me эндпоинта на бэке) */}
-          <Form.Item name="role" rules={[{ required: true, message: "Выберите роль!" }]}>
-            <Select placeholder="Выберите роль" suffixIcon={<TeamOutlined />}>
-              <Select.Option value="admin">Администратор</Select.Option>
-              <Select.Option value="factory">Завод</Select.Option>
-              <Select.Option value="manager">Менеджер</Select.Option>
-              <Select.Option value="accountant">Бухгалтер</Select.Option>
-            </Select>
-          </Form.Item>
 
           <Form.Item name="password" rules={[{ required: true, message: "Введите пароль!" }]}>
             <Input.Password prefix={<LockOutlined />} placeholder="Пароль" />

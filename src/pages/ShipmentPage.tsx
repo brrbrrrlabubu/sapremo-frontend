@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Table, Button, Modal, Form, Input, Select, DatePicker, Tabs, Tag, Typography, Space, Card, Row, Col, notification, Popconfirm, InputNumber } from "antd";
+import { Table, Button, Modal, Form, Input, Select, DatePicker, Tabs, Tag, Typography, Space, Card, Row, Col, App, Popconfirm, InputNumber } from "antd";
 import { PlusOutlined, FileTextOutlined, CalendarOutlined, UserOutlined, CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, PrinterOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
@@ -19,6 +19,7 @@ export default function ShipmentsPage() {
   const { theme } = useUIStore();
   const isDark = theme === "dark";
 
+  const { notification } = App.useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [shipments, setShipments] = useState<Shipment[]>(dataService.getShipments());
   const [form] = Form.useForm();

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { ConfigProvider, theme as antTheme } from "antd";
+import { ConfigProvider, App as AntdApp, theme as antTheme } from "antd";
 import AppRouter from "./router/AppRouter";
 import { useTranslation } from "react-i18next";
 import { useUIStore } from "./store/useUIStore";
@@ -94,7 +94,9 @@ export default function App() {
         },
       }}
     >
-      <AppRouter />
+      <AntdApp>
+        <AppRouter />
+      </AntdApp>
     </ConfigProvider>
   );
 }

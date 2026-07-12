@@ -9,7 +9,7 @@ export class ShipmentService {
   }
 
   public static async updateStatus(id: string, status: ShipmentStatus): Promise<Shipment> {
-    const response = await axiosClient.patch(`/shipments/${id}/status`, { status });
+    const response = await axiosClient.patch(`/shipments/${id}/status/`, { status });
     return ShipmentSchema.parse(response.data);
   }
 }
