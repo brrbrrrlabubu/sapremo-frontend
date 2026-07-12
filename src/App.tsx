@@ -29,7 +29,11 @@ export default function App() {
         algorithm: theme === "dark" ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
         token: {
           colorPrimary: "#1890ff", // фирменный яркий голубой цвет
-          borderRadius: 4,
+          borderRadius: 6,
+          fontFamily: "Inter, sans-serif",
+          colorSuccess: "#52c41a",
+          colorWarning: "#fa8c16",
+          colorError: "#ff4d4f",
           fontSize: 14,
           
           // Глобальное исправление фонов рабочих областей во всех модулях
