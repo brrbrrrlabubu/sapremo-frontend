@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Card, Form, Input, Button, Typography, App, Select } from "antd";
-import { LockOutlined, UserOutlined, TeamOutlined } from "@ant-design/icons";
+import { Card, Form, Input, Button, Typography, App } from "antd";
+import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { useUserStore } from "../store/useUserStore";
 import { AuthService } from "../services/auth.service";
 

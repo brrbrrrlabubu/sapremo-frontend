@@ -1,144 +1,78 @@
 import { useState, useEffect } from "react";
-import { Table, Button, Modal, Form, Input, Select, Skeleton, Empty, Space, Tag, Typography, Card, App, Popconfirm } from "antd";
-import { PlusOutlined, DatabaseOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Table, Skeleton, Empty, Space, Tag, Typography, Card, App } from "antd";
+import { DatabaseOutlined } from "@ant-design/icons";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { useUIStore } from "../store/useUIStore";
 import { useTranslation } from "react-i18next";
+import { axiosClient } from "../api/axiosClient";
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
-interface Warehouse {
-  id: string;
-  name: string;
-  type: "main" | "retail" | "transit";
-  address: string;
-  status: "active" | "inactive";
+interface WarehouseStat {
+  id?: string;
+  warehouse_id?: string;
+  warehouse_name?: string;
+  name?: string;
+  total_amount?: string;
+  count?: number;
+  [key: string]: any;
 }
 
 export default function WarehousePage() {
   const { t } = useTranslation();
-  const currentUserRole = "admin"; 
-  const canManage = currentUserRole === "admin" || currentUserRole === "director";
 
   const { notification } = App.useApp();
   const { theme } = useUIStore();
   const isDark = theme === "dark";
 
   const [loading, setLoading] = useState<boolean>(true);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [form] = Form.useForm();
+  const [warehouses, setWarehouses] = useState<WarehouseStat[]>([]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setWarehouses([
-        { id: "1", name: t('shipments.mainWarehouse'), type: "main", address: "г. Бишкек, ул. Промышленная 5", status: "active" },
-        { id: "2", name: t('shipments.transitWarehouse'), type: "transit", address: "Чуйская обл., с. Лебединовка", status: "active" },
-        { id: "3", name: "Розничная точка Вефа", type: "retail", address: "г. Бишкек, ТЦ Вефа", status: "inactive" },
-      ]);
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [t]);
-
-  const showCreateModal = () => {
-    setEditingWarehouse(null);
-    form.resetFields();
-    setIsModalOpen(true);
-  };
-
-  const showEditModal = (warehouse: Warehouse) => {
-    setEditingWarehouse(warehouse);
-    form.setFieldsValue(warehouse); 
-    setIsModalOpen(true);
-  };
-
-  const handleSave = (values: any) => {
-    if (editingWarehouse) {
-      setWarehouses(warehouses.map(w => w.id === editingWarehouse.id ? { ...w, ...values } : w));
-      notification.success({
-        message: t('actions.edit'),
-        description: values.name,
-      });
-    } else {
-      const newWarehouse: Warehouse = {
-        id: Date.now().toString(),
-        name: values.name,
-        type: values.type,
-        address: values.address,
-        status: "active",
-      };
-      setWarehouses([newWarehouse, ...warehouses]);
-      notification.success({
-        message: t('actions.create'),
-        description: values.name,
-      });
-    }
-    setIsModalOpen(false);
-    form.resetFields();
-  };
-
-  const handleDelete = (id: string, name: string) => {
-    setWarehouses(warehouses.filter(w => w.id !== id));
-    notification.warning({
-      message: t('actions.delete'),
-      description: name,
-    });
-  };
+    const fetchWarehouses = async () => {
+      try {
+        setLoading(true);
+        const response = await axiosClient.get('/stats/warehouses/');
+        const data = Array.isArray(response.data) ? response.data : response.data.results || [];
+        setWarehouses(data);
+      } catch (error) {
+        notification.error({ message: 'Ошибка загрузки данных о складах' });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchWarehouses();
+  }, []);
 
   const columns = [
     {
       title: t('warehouses.name'),
-      dataIndex: "name",
       key: "name",
-      render: (text: string) => (
+      render: (_: any, record: WarehouseStat) => (
         <Space>
           <DatabaseOutlined style={{ color: "#1890ff" }} /> 
-          <strong style={{ color: isDark ? "rgba(255, 255, 255, 0.85)" : "#000000" }}>{text}</strong>
+          <strong style={{ color: isDark ? "rgba(255, 255, 255, 0.85)" : "#000000" }}>
+            {record.warehouse_name || record.name || record.warehouse_id || 'N/A'}
+          </strong>
         </Space>
       ),
     },
     {
-      title: t('warehouses.type'),
-      dataIndex: "type",
-      key: "type",
-      render: (type: string) => {
-        const config: Record<string, { color: string; text: string }> = {
-          main: { color: "blue", text: t('warehouses.typeMain') },
-          transit: { color: "orange", text: t('warehouses.typeTransit') },
-          retail: { color: "purple", text: t('warehouses.typeRetail') },
-        };
-        return <Tag color={config[type]?.color}>{config[type]?.text}</Tag>;
+      title: 'ID',
+      key: 'warehouse_id',
+      render: (_: any, record: WarehouseStat) => (
+        <Text code style={{ fontSize: 11 }}>
+          {(record.warehouse_id || record.id || '').toString().substring(0, 8)}…
+        </Text>
+      ),
+    },
+    {
+      title: 'Общая сумма',
+      key: 'total_amount',
+      render: (_: any, record: WarehouseStat) => {
+        const val = record.total_amount || record.count || '0';
+        return <Tag color="blue">{val}</Tag>;
       },
-    },
-    {
-      title: t('warehouses.address'),
-      dataIndex: "address",
-      key: "address",
-    },
-    {
-      title: t('dashboard.status'),
-      dataIndex: "status",
-      key: "status",
-      render: (status: string) => (
-        <Tag color={status === "active" ? "success" : "error"}>
-          {status === "active" ? t('status.active') : t('status.inactive')}
-        </Tag>
-      ),
-    },
-    {
-      title: t('common.actions'),
-      key: "actions",
-      render: (_: any, record: Warehouse) => (
-        <Space size="middle">
-          <Button type="text" icon={<EditOutlined style={{ color: "#1890ff" }} />} disabled={!canManage} onClick={() => showEditModal(record)} />
-          <Popconfirm title={t('warehouses.deleteConfirmTitle')} description={t('warehouses.deleteConfirmDesc')} onConfirm={() => handleDelete(record.id, record.name)} okText={t('common.yes')} cancelText={t('common.no')} disabled={!canManage}>
-            <Button type="text" danger icon={<DeleteOutlined />} disabled={!canManage} />
-          </Popconfirm>
-        </Space>
-      ),
     },
   ];
 
@@ -155,7 +89,6 @@ export default function WarehousePage() {
               <DotLottieReact src="https://lottie.host/embed/8410b0fb-7182-4160-b747-d5d14df21598/E9G9XfRsh2.json" autoplay loop />
             </div>
           </div>
-          <Button type="primary" icon={<PlusOutlined />} onClick={showCreateModal} disabled={!canManage} style={{ height: "36px", flexShrink: 0 }}>{t('warehouses.add')}</Button>
         </div>
       </Card>
 
@@ -164,22 +97,14 @@ export default function WarehousePage() {
       ) : warehouses.length === 0 ? (
         <Empty description={t('warehouses.noData')} />
       ) : (
-        <Table dataSource={warehouses} columns={columns} rowKey="id" pagination={false} scroll={{ x: 'max-content' }} />
+        <Table 
+          dataSource={warehouses} 
+          columns={columns} 
+          rowKey={(record, i) => record.id || record.warehouse_id || String(i)} 
+          pagination={false} 
+          scroll={{ x: 'max-content' }} 
+        />
       )}
-
-      <Modal title={editingWarehouse ? t('warehouses.editModalTitle') : t('warehouses.addModalTitle')} open={isModalOpen} onOk={() => form.submit()} onCancel={() => setIsModalOpen(false)} okText={t('actions.save')} cancelText={t('actions.cancel')}>
-        <Form form={form} layout="vertical" onFinish={handleSave} style={{ marginTop: 16 }}>
-          <Form.Item name="name" label={t('warehouses.name')} rules={[{ required: true, message: t('warehouses.enterName') }]}><Input placeholder={t('warehouses.namePlaceholder')} /></Form.Item>
-          <Form.Item name="type" label={t('warehouses.type')} rules={[{ required: true, message: t('warehouses.selectType') }]}>
-            <Select placeholder={t('warehouses.typePlaceholder')}>
-              <Option value="main">{t('warehouses.typeMain')}</Option>
-              <Option value="transit">{t('warehouses.typeTransit')}</Option>
-              <Option value="retail">{t('warehouses.typeRetail')}</Option>
-            </Select>
-          </Form.Item>
-          <Form.Item name="address" label={t('warehouses.address')} rules={[{ required: true, message: t('warehouses.enterAddress') }]}><Input.TextArea placeholder={t('warehouses.addressPlaceholder')} rows={3} /></Form.Item>
-        </Form>
-      </Modal>
     </div>
   );
 }

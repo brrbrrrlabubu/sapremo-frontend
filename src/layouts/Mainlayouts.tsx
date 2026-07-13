@@ -1,15 +1,19 @@
-import { Layout, Menu, Grid } from "antd";
-import { 
+import { Layout, Menu, Grid, Dropdown, Avatar } from "antd";
+import {
   DashboardOutlined,
   ShoppingCartOutlined,
   DatabaseOutlined,
   DollarOutlined,
   BarChartOutlined,
-  FileTextOutlined
+  FileTextOutlined,
+  UserOutlined,
+  LogoutOutlined
 } from "@ant-design/icons";
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { ThemeLangSelector } from "../components/ThemeLangSelector";
 import { useUIStore } from "../store/useUIStore";
+import { useUserStore } from "../store/useUserStore";
+import { AuthService } from "../services/auth.service";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 
@@ -17,14 +21,46 @@ const { Header, Sider, Content } = Layout;
 const { useBreakpoint } = Grid;
 
 export default function MainLayout() {
-  const [isOnline, setIsOnline] = useState<boolean>(true); 
+  const [isOnline, setIsOnline] = useState<boolean>(true);
   const location = useLocation();
+  const navigate = useNavigate();
   const { theme } = useUIStore();
+  const { user, clearUser } = useUserStore();
   const { t } = useTranslation();
   const screens = useBreakpoint();
 
   const isDark = theme === "dark";
   const isMobile = !screens.md; // < 768px
+
+  const handleLogout = async () => {
+    try {
+      await AuthService.logout();
+    } catch (e) {
+      // Ignore network errors on logout
+    } finally {
+      clearUser();
+      navigate('/login');
+    }
+  };
+
+  const userMenuItems = [
+    {
+      key: "profile",
+      icon: <UserOutlined />,
+      label: user?.name || t('common.user', 'User'),
+      disabled: true,
+    },
+    {
+      type: "divider" as const,
+    },
+    {
+      key: "logout",
+      icon: <LogoutOutlined />,
+      label: t('common.logout', 'Log out'),
+      onClick: handleLogout,
+      danger: true,
+    }
+  ];
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -49,17 +85,17 @@ export default function MainLayout() {
           ]}
         />
       </Sider>
-      
+
       {/* Основной контент */}
       <Layout>
-        <Header style={{ 
-          background: isDark ? "#141414" : "#ffffff", 
-          padding: isMobile ? "0 8px 0 48px" : "0 24px", 
-          display: "flex", 
-          justifyContent: "flex-end", 
-          alignItems: "center", 
-          height: "64px", 
-          borderBottom: `1px solid ${isDark ? "#303030" : "#f0f0f0"}`, 
+        <Header style={{
+          background: isDark ? "#141414" : "#ffffff",
+          padding: isMobile ? "0 8px 0 48px" : "0 24px",
+          display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "center",
+          height: "64px",
+          borderBottom: `1px solid ${isDark ? "#303030" : "#f0f0f0"}`,
           transition: "all 0.3s",
           gap: isMobile ? "6px" : "16px",
           overflow: "hidden",
@@ -75,15 +111,23 @@ export default function MainLayout() {
           )}
           {/* Селектор темы и языка */}
           <ThemeLangSelector compact={isMobile} />
+
+          {/* Профиль пользователя */}
+          <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="bottomRight">
+            <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 8px', borderRadius: '4px', background: isDark ? "#1f1f1f" : "#f5f5f5", border: `1px solid ${isDark ? "#303030" : "#e8e8e8"}`, transition: "all 0.3s" }}>
+              <Avatar icon={<UserOutlined />} size="small" />
+              {!isMobile && <span style={{ color: isDark ? "#fff" : "#000", fontWeight: 500 }}>{user?.name || t('common.user', 'User')}</span>}
+            </div>
+          </Dropdown>
         </Header>
 
-        <Content style={{ 
-          margin: isMobile ? "8px" : "24px 16px", 
-          padding: isMobile ? 12 : 24, 
-          background: isDark ? "#141414" : "#ffffff", 
-          borderRadius: 8, 
-          minHeight: 280, 
-          transition: "all 0.3s" 
+        <Content style={{
+          margin: isMobile ? "8px" : "24px 16px",
+          padding: isMobile ? 12 : 24,
+          background: isDark ? "#141414" : "#ffffff",
+          borderRadius: 8,
+          minHeight: 280,
+          transition: "all 0.3s"
         }}>
           <Outlet />
         </Content>

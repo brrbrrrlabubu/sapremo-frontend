@@ -1,25 +1,112 @@
-import { Card, Typography, List, Button, Row, Col, Space, App } from "antd";
-import { FilePdfOutlined, FileExcelOutlined, DownloadOutlined, BarChartOutlined } from "@ant-design/icons";
+import { useEffect, useState } from "react";
+import { Card, Typography, Table, Button, Row, Col, Space, App, Tag } from "antd";
+import { FilePdfOutlined, FileExcelOutlined, BarChartOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
+import { InvoiceService } from "../services/invoice.service";
+import type { Invoice } from "../types/api.types";
+import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 
 export default function ReportsPage() {
   const { t } = useTranslation();
   const { notification } = App.useApp();
+  
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  const handleDownload = (fileName: string) => {
-    notification.success({
-      message: t('actions.download'),
-      description: `${fileName}`,
-      placement: "bottomRight",
-    });
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
+
+  const fetchInvoices = async () => {
+    try {
+      setLoading(true);
+      const data = await InvoiceService.getInvoices();
+      setInvoices(data.results);
+    } catch (error) {
+      notification.error({
+        message: t('errors.fetchFailed', 'Ошибка загрузки накладных'),
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const reportFiles = [
-    { title: t('reports.report1'), type: "PDF", icon: <FilePdfOutlined /> },
-    { title: t('reports.report2'), type: "Excel", icon: <FileExcelOutlined /> },
-    { title: t('reports.report3'), type: "PDF", icon: <BarChartOutlined /> },
+  const handleDownload = async (id: string, format: 'pdf' | 'excel') => {
+    setDownloadingId(`${id}-${format}`);
+    try {
+      await InvoiceService.downloadInvoice(id, format);
+      notification.success({
+        message: t('actions.download'),
+        description: `invoice_${id.substring(0, 8)}.${format === 'pdf' ? 'pdf' : 'xlsx'}`,
+        placement: "bottomRight",
+      });
+    } catch (error) {
+      notification.error({
+        message: 'Ошибка при скачивании файла',
+      });
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const columns = [
+    {
+      title: 'ID',
+      dataIndex: 'id',
+      key: 'id',
+      render: (id: string) => <Text code style={{ fontSize: 11 }}>{id.substring(0, 8)}…</Text>,
+    },
+    {
+      title: 'Склад',
+      dataIndex: 'warehouse_id',
+      key: 'warehouse_id',
+      render: (id: string) => <Text code style={{ fontSize: 11 }}>{id ? id.substring(0, 8) : 'N/A'}…</Text>,
+    },
+    {
+      title: 'Сумма',
+      dataIndex: 'total_amount',
+      key: 'total_amount',
+      render: (amount: string) => <Tag color="blue">{amount || '0'} сом</Tag>,
+    },
+    {
+      title: 'Позиции',
+      dataIndex: 'items',
+      key: 'items',
+      render: (items: any[]) => items ? items.length : 0,
+    },
+    {
+      title: 'Дата создания',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: (date: string) => date ? dayjs(date).format('DD.MM.YYYY HH:mm') : '—',
+    },
+    {
+      title: t('common.actions'),
+      key: 'actions',
+      render: (_: any, record: Invoice) => (
+        <Space>
+          <Button 
+            type="link" 
+            icon={<FilePdfOutlined />} 
+            onClick={() => handleDownload(record.id, 'pdf')}
+            loading={downloadingId === `${record.id}-pdf`}
+          >
+            PDF
+          </Button>
+          <Button 
+            type="link" 
+            icon={<FileExcelOutlined />} 
+            onClick={() => handleDownload(record.id, 'excel')}
+            loading={downloadingId === `${record.id}-excel`}
+          >
+            Excel
+          </Button>
+        </Space>
+      ),
+    },
   ];
 
   return (
@@ -31,15 +118,15 @@ export default function ReportsPage() {
 
       <Row gutter={16}>
         <Col xs={24} md={16}>
-          <Card title={t('reports.available')} bordered={true} style={{ borderRadius: "4px" }}>
-            <List
-              itemLayout="horizontal"
-              dataSource={reportFiles}
-              renderItem={(item) => (
-                <List.Item actions={[ <Button type="link" icon={<DownloadOutlined />} onClick={() => handleDownload(item.title)}>{t('actions.download')}</Button> ]}>
-                  <List.Item.Meta avatar={item.icon} title={item.title} description={`${t('reports.format')} ${item.type}`} />
-                </List.Item>
-              )}
+          <Card title="Накладные" bordered={true} style={{ borderRadius: "4px" }}>
+            <Table 
+              loading={loading}
+              columns={columns} 
+              dataSource={invoices} 
+              rowKey="id" 
+              pagination={{ pageSize: 20 }}
+              scroll={{ x: 'max-content' }}
+              locale={{ emptyText: 'Нет накладных.' }}
             />
           </Card>
         </Col>
@@ -47,9 +134,9 @@ export default function ReportsPage() {
         <Col xs={24} md={8}>
           <Card title={t('reports.quickExport')} bordered={true} style={{ borderRadius: "4px" }}>
             <Space direction="vertical" style={{ width: "100%" }}>
-              <Button block icon={<FileExcelOutlined />} onClick={() => handleDownload(t('reports.exportAll'))}>{t('reports.exportAll')}</Button>
-              <Button block icon={<FilePdfOutlined />} onClick={() => handleDownload(t('reports.printSummary'))}>{t('reports.printSummary')}</Button>
-              <Button block type="primary" icon={<BarChartOutlined />} onClick={() => handleDownload(t('reports.pdfQuarter'))}>{t('reports.pdfQuarter')}</Button>
+              <Button block icon={<FileExcelOutlined />}>{t('reports.exportAll')}</Button>
+              <Button block icon={<FilePdfOutlined />}>{t('reports.printSummary')}</Button>
+              <Button block type="primary" icon={<BarChartOutlined />}>{t('reports.pdfQuarter')}</Button>
             </Space>
           </Card>
         </Col>

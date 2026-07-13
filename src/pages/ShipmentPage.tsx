@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
-import { Table, Button, Modal, Form, Input, Select, DatePicker, Tabs, Tag, Typography, Space, Card, Row, Col, App, Popconfirm, InputNumber } from "antd";
-import { PlusOutlined, FileTextOutlined, CalendarOutlined, UserOutlined, CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, PrinterOutlined } from "@ant-design/icons";
+import { Table, Button, Modal, Form, Input, DatePicker, Tabs, Tag, Typography, Space, Card, Row, Col, App } from "antd";
+import { PlusOutlined, TruckOutlined, CalendarOutlined, UserOutlined, CheckCircleOutlined, CloseCircleOutlined, PrinterOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 
-import { dataService } from "../services/dataService";
-import type { Shipment } from "../services/dataService";
+import { ShipmentService } from "../services/shipment.service";
+import type { Shipment } from "../types/api.types";
 import { useUIStore } from "../store/useUIStore";
+import { useUserStore } from "../store/useUserStore";
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
 export default function ShipmentsPage() {
   const { t } = useTranslation();
@@ -21,71 +21,91 @@ export default function ShipmentsPage() {
 
   const { notification } = App.useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [shipments, setShipments] = useState<Shipment[]>(dataService.getShipments());
+  const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
 
+  const fetchShipments = async () => {
+    try {
+      setLoading(true);
+      const data = await ShipmentService.getShipments();
+      setShipments(data.results);
+    } catch (error) {
+      notification.error({
+        message: t('errors.fetchFailed', 'Failed to fetch shipments'),
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const unsubscribe = dataService.subscribe(() => {
-      setShipments(dataService.getShipments());
-    });
-    return () => unsubscribe();
+    fetchShipments();
   }, []);
 
-  const handleCreate = (values: any) => {
-    const randomAmount = (values.quantity || 1) * 1000;
-    const docNum = `НАК-00${Math.floor(100 + Math.random() * 900)}`;
-    
-    dataService.addShipment({
-      docNumber: docNum,
-      date: values.date.format("YYYY-MM-DD"),
-      warehouse: values.warehouse,
-      client: values.client,
-      status: "transit", 
-      comment: values.comment || "",
-      amount: randomAmount
-    });
+  const handleCreate = async (values: any) => {
+    try {
+      setLoading(true);
+      await ShipmentService.createShipment({
+        shipment_date: values.date.format("YYYY-MM-DD"),
+        warehouse_id: values.warehouse_id,
+        truck_number: values.truck_number,
+        truck_driver: values.truck_driver,
+        created_by: useUserStore.getState().user?.id || '',
+      });
 
-    setIsModalOpen(false);
-    form.resetFields();
+      setIsModalOpen(false);
+      form.resetFields();
 
-    notification.success({
-      message: t('shipments.createModalTitle'),
-      description: `${docNum} ${t('status.transit')}`,
-    });
+      notification.success({
+        message: t('shipments.createModalTitle'),
+        description: t('status.pending', 'Pending'),
+      });
+      fetchShipments();
+    } catch (error) {
+      notification.error({
+        message: t('errors.createFailed', 'Failed to create shipment'),
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleChangeStatus = (id: string, newStatus: Shipment["status"], docNumber: string) => {
-    dataService.updateStatus(id, newStatus);
-    notification.success({
-      message: t('actions.edit'),
-      description: docNumber,
-    });
+  const handleChangeStatus = async (id: string | undefined, newStatus: Shipment["status"]) => {
+    if (!id) return;
+    try {
+      setLoading(true);
+      await ShipmentService.updateStatus(id, newStatus);
+      notification.success({
+        message: t('actions.edit'),
+      });
+      fetchShipments();
+    } catch (error) {
+      notification.error({
+        message: t('errors.updateFailed', 'Failed to update status'),
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (id: string, docNumber: string) => {
-    dataService.deleteShipment(id);
-    notification.warning({
-      message: t('actions.delete'),
-      description: docNumber,
-    });
-  };
 
   const columns = [
     { 
-      title: t('dashboard.docNum'), 
-      dataIndex: "docNumber", 
-      key: "docNumber", 
+      title: t('dashboard.truck_number', 'Truck No.'), 
+      dataIndex: "truck_number", 
+      key: "truck_number", 
       render: (text: string) => (
         <Space>
-          <FileTextOutlined style={{ color: "#1890ff" }} />
+          <TruckOutlined style={{ color: "#1890ff" }} />
           <strong style={{ color: isDark ? "rgba(255, 255, 255, 0.85)" : "#000000" }}>{text}</strong>
         </Space>
       ) 
     },
     { 
       title: t('common.date'), 
-      dataIndex: "date", 
-      key: "date", 
+      dataIndex: "shipment_date", 
+      key: "shipment_date", 
       render: (date: string) => (
         <Space style={{ color: isDark ? "rgba(255, 255, 255, 0.65)" : "inherit" }}>
           <CalendarOutlined style={{ color: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0,0,0,0.45)" }} />
@@ -93,25 +113,15 @@ export default function ShipmentsPage() {
         </Space>
       ) 
     },
-    { title: t('shipments.warehouse'), dataIndex: "warehouse", key: "warehouse" },
+    { title: t('shipments.warehouse_id', 'Warehouse ID'), dataIndex: "warehouse_id", key: "warehouse_id" },
     { 
-      title: t('shipments.client'), 
-      dataIndex: "client", 
-      key: "client", 
+      title: t('shipments.truck_driver', 'Truck Driver'), 
+      dataIndex: "truck_driver", 
+      key: "truck_driver", 
       render: (text: string) => (
         <Space style={{ color: isDark ? "rgba(255, 255, 255, 0.85)" : "inherit" }}>
           <UserOutlined />{text}
         </Space>
-      ) 
-    },
-    { 
-      title: t('common.amount'), 
-      dataIndex: "amount", 
-      key: "amount", 
-      render: (amount: number) => (
-        <Text strong style={{ color: isDark ? "rgba(255, 255, 255, 0.85)" : "#000000" }}>
-          {amount?.toLocaleString()} {t('shipments.som')}
-        </Text>
       ) 
     },
     { 
@@ -121,11 +131,10 @@ export default function ShipmentsPage() {
       render: (status: Shipment["status"]) => {
         const config: any = {
           shipped: { bg: isDark ? "#142518" : "#efffe2", text: isDark ? "#52c41a" : "#52C41A", icon: <CheckCircleOutlined />, label: t('status.shipped') },
-          transit: { bg: isDark ? "#2b2111" : "#fff6da", text: isDark ? "#faad14" : "#FAAD14", icon: <CloseCircleOutlined />, label: t('status.transit') },
-          discrepancy: { bg: isDark ? "#2c1517" : "#ffdfde", text: isDark ? "#ff4d4f" : "#F5222D", icon: <CloseCircleOutlined />, label: t('status.discrepancy') },
-          defective: { bg: isDark ? "#2d1d11" : "#fff5e5", text: isDark ? "#fa8c16" : "#FA8C16", icon: <CloseCircleOutlined />, label: t('status.defective') },
+          pending: { bg: isDark ? "#2b2111" : "#fff6da", text: isDark ? "#faad14" : "#FAAD14", icon: <CloseCircleOutlined />, label: t('status.pending', 'Pending') },
+          cancelled: { bg: isDark ? "#2c1517" : "#ffdfde", text: isDark ? "#ff4d4f" : "#F5222D", icon: <CloseCircleOutlined />, label: t('status.cancelled', 'Cancelled') },
         };
-        const current = config[status];
+        const current = config[status] || config.pending;
         return <Tag style={{ backgroundColor: current.bg, color: current.text, borderColor: isDark ? "transparent" : undefined, borderRadius: "4px" }}>{current.icon} {current.label}</Tag>;
       }
     },
@@ -137,19 +146,17 @@ export default function ShipmentsPage() {
           <Button type="text" icon={<PrinterOutlined style={{ color: isDark ? "rgba(255, 255, 255, 0.65)" : "inherit" }} />} onClick={() => {
             const win = window.open('', '_blank', 'width=800,height=600');
             if (win) {
-              win.document.write(`<html><body><h1>${record.docNumber}</h1><p>${t('shipments.warehouse')}: ${record.warehouse}</p><p>${t('common.amount')}: ${record.amount} ${t('shipments.som')}</p><script>window.onload = function() { window.print(); };</script></body></html>`);
+              win.document.write(`<html><body><h1>${record.truck_number}</h1><p>${t('shipments.warehouse_id', 'Warehouse ID')}: ${record.warehouse_id}</p><p>${t('shipments.truck_driver', 'Driver')}: ${record.truck_driver}</p><script>window.onload = function() { window.print(); };</script></body></html>`);
               win.document.close();
             }
           }} />
-          {record.status === "transit" && (
-            <Button type="text" style={{ color: "#52c41a" }} icon={<CheckCircleOutlined />} disabled={!canManage} onClick={() => handleChangeStatus(record.id, "shipped", record.docNumber)}>{t('shipments.accept')}</Button>
+          {record.status === "pending" && (
+            <Button type="text" style={{ color: "#52c41a" }} icon={<CheckCircleOutlined />} disabled={!canManage} onClick={() => handleChangeStatus(record.id, "shipped")}>{t('shipments.accept')}</Button>
           )}
-          {record.status === "transit" && (
-            <Button type="text" style={{ color: "#1890FF" }} icon={<CloseCircleOutlined />} disabled={!canManage} onClick={() => handleChangeStatus(record.id, "defective", record.docNumber)}>{t('shipments.defect')}</Button>
+          {record.status === "pending" && (
+            <Button type="text" style={{ color: "#1890FF" }} icon={<CloseCircleOutlined />} disabled={!canManage} onClick={() => handleChangeStatus(record.id, "cancelled")}>{t('shipments.cancel', 'Cancel')}</Button>
           )}
-          <Popconfirm title={t('shipments.deleteConfirm')} disabled={!canManage} onConfirm={() => handleDelete(record.id, record.docNumber)}>
-            <Button type="text" danger icon={<DeleteOutlined />} disabled={!canManage} />
-          </Popconfirm>
+
         </Space>
       ),
     },
@@ -157,7 +164,7 @@ export default function ShipmentsPage() {
 
   const renderTable = (statusFilter?: string) => {
     const data = statusFilter ? shipments.filter(s => s.status === statusFilter) : shipments;
-    return <Table dataSource={data} columns={columns} rowKey="id" pagination={false} style={{ marginTop: 16 }} scroll={{ x: 'max-content' }} />;
+    return <Table loading={loading} dataSource={data} columns={columns} rowKey="id" pagination={false} style={{ marginTop: 16 }} scroll={{ x: 'max-content' }} />;
   };
 
   return (
@@ -186,8 +193,8 @@ export default function ShipmentsPage() {
           </Col>
           <Col xs={24} sm={8}>
             <div style={{ background: isDark ? "#2b2111" : "#fffbe6", padding: "12px", borderRadius: "4px", border: `1px solid ${isDark ? "#4d3e1f" : "#ffe58f"}` }}>
-              <Text type="secondary" style={{ color: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0,0,0,0.45)" }}>{t('shipments.inTransit')}</Text>
-              <div style={{ fontSize: "20px", fontWeight: 600, color: "#faad14" }}>{shipments.filter(s => s.status === "transit").length}</div>
+              <Text type="secondary" style={{ color: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0,0,0,0.45)" }}>{t('shipments.pending', 'Pending')}</Text>
+              <div style={{ fontSize: "20px", fontWeight: 600, color: "#faad14" }}>{shipments.filter(s => s.status === "pending").length}</div>
             </div>
           </Col>
           <Col xs={24} sm={8}>
@@ -201,17 +208,17 @@ export default function ShipmentsPage() {
 
       <Tabs defaultActiveKey="all" items={[
         { key: "all", label: t('shipments.all'), children: renderTable() },
-        { key: "transit", label: t('shipments.transitTab'), children: renderTable("transit") },
+        { key: "pending", label: t('shipments.pendingTab', 'Pending'), children: renderTable("pending") },
         { key: "shipped", label: t('shipments.shippedTab'), children: renderTable("shipped") },
       ]} />
 
-      <Modal title={t('shipments.createModalTitle')} open={isModalOpen} onOk={() => form.submit()} onCancel={() => setIsModalOpen(false)}>
+      <Modal title={t('shipments.createModalTitle')} open={isModalOpen} onOk={() => form.submit()} onCancel={() => setIsModalOpen(false)} confirmLoading={loading}>
         <Form form={form} layout="vertical" onFinish={handleCreate}>
           <Form.Item name="date" label={t('common.date')} initialValue={dayjs()}><DatePicker style={{ width: "100%" }} /></Form.Item>
-          <Form.Item name="warehouse" label={t('shipments.warehouse')} rules={[{ required: true }]}><Select><Option value={t('shipments.mainWarehouse')}>{t('shipments.mainWarehouse')}</Option><Option value={t('shipments.transitWarehouse')}>{t('shipments.transitWarehouse')}</Option></Select></Form.Item>
-          <Form.Item name="client" label={t('shipments.client')} rules={[{ required: true }]}><Input /></Form.Item>
-          <Form.Item name="quantity" label={t('shipments.quantity')} rules={[{ required: true, message: t('shipments.enterQuantity') }]}><InputNumber style={{ width: "100%" }} /></Form.Item>
-          <Form.Item name="comment" label={t('shipments.comment')}><Input.TextArea rows={3} /></Form.Item>
+          {/* Typically warehouse id should come from a Warehouse API endpoint, but using string input for now as placeholder for real IDs */}
+          <Form.Item name="warehouse_id" label={t('shipments.warehouse_id', 'Warehouse ID')} rules={[{ required: true }]}><Input placeholder="UUID" /></Form.Item>
+          <Form.Item name="truck_number" label={t('shipments.truck_number', 'Truck Number')} rules={[{ required: true }]}><Input /></Form.Item>
+          <Form.Item name="truck_driver" label={t('shipments.truck_driver', 'Truck Driver')} rules={[{ required: true }]}><Input /></Form.Item>
         </Form>
       </Modal>
     </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Statistic, Typography, Table, Tag, Space } from 'antd';
+import { Row, Col, Card, Statistic, Typography, Table, Tag, Space, App } from 'antd';
 import { 
   ArrowUpOutlined, 
   InboxOutlined, 
@@ -7,8 +7,8 @@ import {
   PhoneOutlined,
   MailOutlined
 } from '@ant-design/icons';
-import { dataService } from '../services/dataService';
-import type { Shipment } from '../services/dataService';
+import { ShipmentService } from '../services/shipment.service';
+import type { Shipment } from '../types/api.types';
 import noDataIcon from '../assets/No-Data.svg';
 import { useTranslation } from 'react-i18next';
 
@@ -26,31 +26,44 @@ const CustomNoData: React.FC = () => {
 
 export default function DashboardPage() {
   const { t } = useTranslation();
-  const [shipments, setShipments] = useState<Shipment[]>(dataService.getShipments());
+  const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [loading, setLoading] = useState(false);
+  const { notification } = App.useApp();
 
   useEffect(() => {
-    const unsubscribe = dataService.subscribe(() => setShipments(dataService.getShipments()));
-    return () => unsubscribe();
-  }, []);
+    const fetchShipments = async () => {
+      try {
+        setLoading(true);
+        const data = await ShipmentService.getShipments();
+        setShipments(data.results);
+      } catch (error) {
+        notification.error({
+          message: t('errors.fetchFailed', 'Failed to fetch shipments'),
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchShipments();
+  }, [t, notification]);
 
-  const totalItems = 12540 + (shipments.length * 150);
   const totalShipmentsCount = shipments.length;
-  const transitCount = shipments.filter(s => s.status === "transit").length;
+  const pendingCount = shipments.filter(s => s.status === "pending").length;
+  const totalAmount = shipments.reduce((sum, s) => sum + parseFloat(s.total_amount || '0'), 0);
 
   const metrics = [
-    { title: t('dashboard.stock'), value: totalItems, suffix: ` ${t('dashboard.pcs')}`, icon: <InboxOutlined style={{ fontSize: '24px', color: '#1890ff' }} />, color: "#e6f7ff", trend: t('dashboard.updating') },
-    { title: t('dashboard.totalShipments'), value: totalShipmentsCount, suffix: ` ${t('dashboard.docs')}`, icon: <TruckOutlined style={{ fontSize: '24px', color: '#52c41a' }} />, color: "#f6ffed", trend: `${t('dashboard.trucksInTransit')} ${transitCount}` }
+    { title: t('dashboard.stock'), value: totalAmount.toLocaleString('ru-RU'), suffix: ` ${t('shipments.som')}`, icon: <InboxOutlined style={{ fontSize: '24px', color: '#1890ff' }} />, color: "#e6f7ff", trend: t('dashboard.updating') },
+    { title: t('dashboard.totalShipments'), value: totalShipmentsCount, suffix: ` ${t('dashboard.docs')}`, icon: <TruckOutlined style={{ fontSize: '24px', color: '#52c41a' }} />, color: "#f6ffed", trend: `${t('dashboard.trucksInTransit', 'Pending:')} ${pendingCount}` }
   ];
 
   const recentActivityColumns = [
-    { title: t('dashboard.docNum'), dataIndex: 'docNumber', key: 'docNumber', render: (text: string) => <Text strong style={{ color: '#1890ff' }}>{text}</Text> },
-    { title: t('dashboard.destWarehouse'), dataIndex: 'warehouse', key: 'warehouse' },
+    { title: t('dashboard.truck_number', 'Truck No.'), dataIndex: 'truck_number', key: 'truck_number', render: (text: string) => <Text strong style={{ color: '#1890ff' }}>{text}</Text> },
+    { title: t('dashboard.destWarehouse', 'Warehouse'), dataIndex: 'warehouse_id', key: 'warehouse_id' },
     { title: t('dashboard.status'), dataIndex: 'status', key: 'status', render: (status: string) => {
-        const config: any = {
+        const config: Record<string, { color: string, label: string }> = {
           shipped: { color: "success", label: t('status.shipped') },
-          transit: { color: "processing", label: t('status.transit') },
-          discrepancy: { color: "error", label: t('status.discrepancy') },
-          defective: { color: "warning", label: t('status.defective') },
+          pending: { color: "processing", label: t('status.pending', 'Pending') },
+          cancelled: { color: "error", label: t('status.cancelled', 'Cancelled') },
         };
         const current = config[status] || { color: "default", label: status };
         return <Tag color={current.color}>{current.label}</Tag>;
@@ -85,7 +98,7 @@ export default function DashboardPage() {
       <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
         <Col span={24}>
             <Card title={t('dashboard.recentActivity')} bordered={true} style={{ borderRadius: '4px' }}>
-                <Table columns={recentActivityColumns} dataSource={shipments} rowKey="id" pagination={false} locale={{ emptyText: <CustomNoData /> }} scroll={{ x: 'max-content' }} />
+                <Table loading={loading} columns={recentActivityColumns} dataSource={shipments} rowKey="id" pagination={false} locale={{ emptyText: <CustomNoData /> }} scroll={{ x: 'max-content' }} />
             </Card>
         </Col>
       </Row>

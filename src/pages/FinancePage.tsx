@@ -8,6 +8,7 @@ import { InvoiceService } from "../services/invoice.service";
 import { useApiOperation } from "../hooks/useRequestOperations";
 import { DebtSchema } from "../schemas/apiSchemas";
 import { z } from "zod";
+import type { Payment } from "../types/api.types";
 
 const { Title, Text } = Typography;
 
@@ -18,25 +19,26 @@ export default function FinancePage() {
   const { theme } = useUIStore();
   const isDark = theme === "dark";
 
-  const { isLoading, error, execute } = useApiOperation();
+  const { isLoading, error } = useApiOperation();
   const [debts, setDebts] = useState<Debt[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  // ─── Загрузка дебиторской задолженности с реального API ──────────────────
+  // ─── Загрузка дебиторской задолженности и платежей ──────────────────
   useEffect(() => {
-    const fetchDebts = async () => {
+    const fetchDebtsAndPayments = async () => {
       try {
-        const data = await execute(
-          () => PaymentService.getAllDebts(),
-          { endpoint: '/payments/debts/all/', method: 'GET', payload: {} },
-          { offlineFallback: false }
-        );
-        if (data) setDebts(data);
+        const [debtsData, paymentsData] = await Promise.all([
+          PaymentService.getAllDebts(),
+          PaymentService.getPayments(1, 100)
+        ]);
+        if (debtsData) setDebts(debtsData);
+        if (paymentsData && paymentsData.results) setPayments(paymentsData.results);
       } catch {
-        // Ошибка уже установлена внутри useApiOperation
+        // Ошибка обрабатывается или логируется
       }
     };
-    fetchDebts();
+    fetchDebtsAndPayments();
   }, []);
 
   // ─── Скачивание накладной по ID склада-должника ───────────────────────────
@@ -52,7 +54,7 @@ export default function FinancePage() {
   };
 
   // ─── Агрегированные итоги по всем долгам ─────────────────────────────────
-  const totalDebt = debts.reduce((sum, d) => sum + parseFloat(d.total_debt || '0'), 0);
+  const totalDebt = debts.reduce((sum, d) => sum + parseFloat(d.amount || '0'), 0);
 
   const stats = {
     debtCount: debts.length,
@@ -68,17 +70,12 @@ export default function FinancePage() {
       render: (id: string) => <Text code style={{ fontSize: 11 }}>{id.substring(0, 8)}…</Text>,
     },
     {
-      title: 'Наименование филиала',
-      dataIndex: 'warehouse_name',
-      key: 'warehouse_name',
-    },
-    {
-      title: 'Задолженность (Рва)',
-      dataIndex: 'total_debt',
-      key: 'total_debt',
+      title: 'Задолженность',
+      dataIndex: 'amount',
+      key: 'amount',
       render: (val: string) => (
         <Tag color="volcano" style={{ fontWeight: 'bold', fontSize: 13 }}>
-          {parseFloat(val).toLocaleString('ru-RU')} сом
+          {parseFloat(val || '0').toLocaleString('ru-RU')} сом
         </Tag>
       ),
     },
@@ -111,28 +108,17 @@ export default function FinancePage() {
     },
   ];
 
-  // ─── Колонки вкладки платежей (статические примеры до появления эндпоинта) ─
+  // ─── Колонки вкладки платежей ──────────────────────────────────────────
   const paymentColumns = [
-    { title: t('finance.source'), dataIndex: "source", key: "source" },
+    { title: 'Метод', dataIndex: "payment_method", key: "payment_method" },
     {
       title: t('finance.amountSom'),
       dataIndex: "amount",
       key: "amount",
-      render: (val: number) => val.toLocaleString(),
+      render: (val: string) => <Tag color="green">{val}</Tag>,
     },
-    {
-      title: t('dashboard.status'),
-      dataIndex: "status",
-      key: "status",
-      render: (status: string) => (
-        <Tag color={status === t('status.paid') ? "green" : "volcano"}>{status}</Tag>
-      ),
-    },
-  ];
-
-  const paymentData = [
-    { key: "1", source: "Заказ №123", amount: 150000, status: t('status.paid') },
-    { key: "2", source: "Заказ №124", amount: 95000, status: t('status.waiting') },
+    { title: 'Дата', dataIndex: "paid_at", key: "paid_at", render: (date: string) => new Date(date).toLocaleString() },
+    { title: 'Комментарий', dataIndex: "comment", key: "comment" },
   ];
 
   return (
@@ -220,10 +206,12 @@ export default function FinancePage() {
           label: t('finance.cashFlow'),
           children: (
             <Table
-              dataSource={paymentData}
+              dataSource={payments}
               columns={paymentColumns}
-              pagination={false}
+              rowKey="id"
+              pagination={{ pageSize: 20 }}
               scroll={{ x: 'max-content' }}
+              locale={{ emptyText: 'Нет истории платежей.' }}
             />
           ),
         },

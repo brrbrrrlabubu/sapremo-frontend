@@ -19,6 +19,16 @@ export class ProductService {
     return paginatedSchema.parse(response.data) as PaginatedResponse<Product>;
   }
 
+  public static async getProduct(id: string): Promise<Product> {
+    const response = await axiosClient.get(`/products/${id}/`);
+    return ProductSchema.parse(response.data);
+  }
+
+  public static async getProductByBarcode(barcode: string): Promise<Product> {
+    const response = await axiosClient.get(`/products/barcode/${barcode}/`);
+    return ProductSchema.parse(response.data);
+  }
+
   public static async createProduct(product: Omit<Product, 'id'>): Promise<Product> {
     const response = await axiosClient.post('/products/', product);
     return ProductSchema.parse(response.data);
@@ -32,5 +42,9 @@ export class ProductService {
   public static async updateProductPartial(id: string, patch: Partial<Omit<Product, 'id'>>): Promise<Product> {
     const response = await axiosClient.patch(`/products/${id}/`, patch);
     return ProductSchema.parse(response.data);
+  }
+
+  public static async deleteProduct(id: string): Promise<void> {
+    await axiosClient.delete(`/products/${id}/`);
   }
 }

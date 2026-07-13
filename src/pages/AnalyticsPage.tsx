@@ -1,21 +1,39 @@
-import { Card, Row, Col, Typography, Statistic, Table } from "antd";
+import { useEffect, useState } from "react";
+import { Card, Row, Col, Typography, Statistic, Table, App } from "antd";
 import { LineChartOutlined, TeamOutlined, FileTextOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
+import { axiosClient } from "../api/axiosClient";
 
 const { Title, Text } = Typography;
 
 export default function AnalyticsPage() {
   const { t } = useTranslation();
+  const { notification } = App.useApp();
+  
+  const [stats, setStats] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const dataSource = [
-    { key: '1', name: t('shipments.mainWarehouse'), turnover: `850,000 ${t('shipments.som')}`, status: t('status.active') },
-    { key: '2', name: t('shipments.transitWarehouse'), turnover: `420,000 ${t('shipments.som')}`, status: t('status.active') },
-  ];
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosClient.get('/stats/warehouses/');
+      // Assuming response.data is an array or object containing results
+      const data = Array.isArray(response.data) ? response.data : response.data.results || [];
+      setStats(data);
+    } catch (error) {
+      notification.error({ message: 'Ошибка загрузки статистики' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const columns = [
-    { title: t('analytics.warehouseName'), dataIndex: 'name', key: 'name' },
-    { title: t('analytics.turnover'), dataIndex: 'turnover', key: 'turnover' },
-    { title: t('dashboard.status'), dataIndex: 'status', key: 'status' },
+    { title: 'Склад', dataIndex: 'warehouse_name', key: 'warehouse_name', render: (val: any, record: any) => val || record.name || 'N/A' },
+    { title: 'Оборот / Значение', dataIndex: 'value', key: 'value', render: (val: any, record: any) => val || record.total_amount || record.count || '0' },
   ];
 
   return (
@@ -27,10 +45,10 @@ export default function AnalyticsPage() {
 
       <Row gutter={16} style={{ marginBottom: 24 }}>
         {[
-          { title: t('analytics.avgTurnover'), value: "513,000", suffix: t('shipments.som'), icon: <LineChartOutlined /> },
-          { title: t('analytics.activePoints'), value: "3", icon: <TeamOutlined /> },
-          { title: t('analytics.requests'), value: "142", icon: <FileTextOutlined /> },
-          { title: t('analytics.inTransit'), value: "28", icon: <ShoppingCartOutlined /> },
+          { title: t('analytics.avgTurnover'), value: "N/A", suffix: t('shipments.som'), icon: <LineChartOutlined /> },
+          { title: t('analytics.activePoints'), value: stats.length.toString(), icon: <TeamOutlined /> },
+          { title: t('analytics.requests'), value: "N/A", icon: <FileTextOutlined /> },
+          { title: t('analytics.inTransit'), value: "N/A", icon: <ShoppingCartOutlined /> },
         ].map((item, index) => (
           <Col xs={24} sm={12} md={6} key={index}>
             <Card hoverable style={{ textAlign: 'center', borderRadius: '4px' }}>
@@ -41,7 +59,15 @@ export default function AnalyticsPage() {
       </Row>
 
       <Card title={t('analytics.details')} bordered={true} style={{ borderRadius: "4px" }}>
-        <Table dataSource={dataSource} columns={columns} pagination={false} scroll={{ x: 'max-content' }} />
+        <Table 
+          loading={loading}
+          dataSource={stats} 
+          columns={columns} 
+          rowKey={(record, i) => record.id || record.warehouse_id || String(i)} 
+          pagination={false} 
+          scroll={{ x: 'max-content' }} 
+          locale={{ emptyText: 'Нет данных для отображения.' }}
+        />
       </Card>
     </div>
   );
