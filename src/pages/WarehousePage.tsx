@@ -12,12 +12,12 @@ import {
   Tag, 
   Typography, 
   Card,
-  notification,
+  App, // <-- Изменено: заменили статический notification на компонент App
   Popconfirm 
 } from "antd";
 import { PlusOutlined, DatabaseOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import { useUIStore } from "../store/useUIStore"; // Импортируем наш стор интерфейса
+import { useUIStore } from "../store/useUIStore";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -37,6 +37,9 @@ export default function WarehousePage() {
   // Подключаем тему из глобального состояния
   const { theme } = useUIStore();
   const isDark = theme === "dark";
+
+  // ХУК КОНТЕКСТА: Вытаскиваем умный notification, который знает про темную тему
+  const { notification } = App.useApp(); 
 
   const [loading, setLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -101,6 +104,7 @@ export default function WarehousePage() {
     });
   };
 
+  // КОНФИГУРАЦИЯ КОЛОНОК ТАБЛИЦЫ
   const columns = [
     {
       title: "Название склада",
@@ -109,8 +113,7 @@ export default function WarehousePage() {
       render: (text: string) => (
         <Space>
           <DatabaseOutlined style={{ color: "#1890ff" }} /> 
-          {/* Исправлено: текст названия адаптируется под тему и не сливается */}
-          <strong style={{ color: isDark ? "rgba(255, 255, 255, 0.85)" : "#000000" }}>{text}</strong>
+          <Text strong>{text}</Text>
         </Space>
       ),
     },
@@ -119,13 +122,13 @@ export default function WarehousePage() {
       dataIndex: "type",
       key: "type",
       render: (type: string) => {
-        // Мягкие цвета для тегов в тёмной теме, чтобы не выжигали глаза
         const config: Record<string, { color: string; text: string }> = {
-          main: { color: isDark ? "geekblue-dark" : "blue", text: "Производственный" },
-          transit: { color: isDark ? "volcano-dark" : "orange", text: "Транзитный" },
-          retail: { color: isDark ? "purple-dark" : "purple", text: "Розничный" },
+          main: { color: "blue", text: "Производственный" },
+          transit: { color: "orange", text: "Транзитный" },
+          retail: { color: "purple", text: "Розничный" },
         };
-        return <Tag color={config[type]?.color}>{config[type]?.text}</Tag>;
+        const current = config[type] || { color: "default", text: type };
+        return <Tag color={current.color}>{current.text}</Tag>;
       },
     },
     {
@@ -137,11 +140,14 @@ export default function WarehousePage() {
       title: "Статус",
       dataIndex: "status",
       key: "status",
-      render: (status: string) => (
-        <Tag color={status === "active" ? (isDark ? "green-dark" : "success") : (isDark ? "red-dark" : "error")}>
-          {status === "active" ? "Активен" : "Заблокирован"}
-        </Tag>
-      ),
+      render: (status: string) => {
+        const color = status === "active" ? "success" : "error";
+        return (
+          <Tag color={color}>
+            {status === "active" ? "Активен" : "Заблокирован"}
+          </Tag>
+        );
+      },
     },
     {
       title: "Действия",
@@ -176,13 +182,12 @@ export default function WarehousePage() {
 
   return (
     <div>
-      {/* Идеальный адаптивный заголовок в рамочке */}
+      {/* Главная информационная карточка */}
       <Card 
         bordered={true} 
         style={{ 
           marginBottom: 24, 
           borderRadius: "4px", 
-          // Динамическая рамка и фон, которые зависят от состояния темы
           border: `1px solid ${isDark ? "#303030" : "#e8e8e8"}`,
           boxShadow: isDark ? "none" : "0 1px 2px rgba(0,0,0,0.02)",
           background: isDark ? "#1f1f1f" : "#ffffff"
@@ -193,9 +198,8 @@ export default function WarehousePage() {
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <div>
               <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px", fontWeight: 600 }}>
-                 Управление складами
+                Управление складами
               </Title>
-              {/* Исправлено: второстепенный текст плавно тускнеет в темноте */}
               <Text type="secondary" style={{ fontSize: "14px", marginTop: 4, display: "block", color: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0, 0, 0, 0.45)" }}>
                 Мониторинг, редактирование и удаление складских точек завода.
               </Text>
@@ -221,6 +225,7 @@ export default function WarehousePage() {
         </div>
       </Card>
 
+      {/* Таблица / Загрузка */}
       {loading ? (
         <Skeleton active paragraph={{ rows: 5 }} />
       ) : warehouses.length === 0 ? (
@@ -234,6 +239,7 @@ export default function WarehousePage() {
         />
       )}
 
+      {/* Модальное окно создания/редактирования */}
       <Modal
         title={editingWarehouse ? "Редактирование склада" : "Добавление нового склада"}
         open={isModalOpen}

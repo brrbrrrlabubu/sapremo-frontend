@@ -1,11 +1,14 @@
-import { Card, Typography, List, Button, Row, Col, Space, notification } from "antd";
+import { Card, Typography, List, Button, Row, Col, Space, App } from "antd"; // <-- Импортируем App вместо notification
 import { FilePdfOutlined, FileExcelOutlined, DownloadOutlined, BarChartOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
 export default function ReportsPage() {
-  // Функция-заглушка для имитации скачивания
+  // Достаем контекстный notification
+  const { notification } = App.useApp();
+
   const handleDownload = (fileName: string) => {
+    // Вызов остается прежним, но теперь плашка будет элегантного темного цвета!
     notification.success({
       message: "Загрузка началась",
       description: `Файл "${fileName}" готовится к скачиванию...`,
@@ -21,7 +24,7 @@ export default function ReportsPage() {
 
   return (
     <div>
-      {/* Шапка в стиле Главной */}
+      {/* Шапка */}
       <Card 
         bordered={true} 
         style={{ marginBottom: 24, borderRadius: "4px", border: "1px solid #e8e8e8" }} 
@@ -36,9 +39,9 @@ export default function ReportsPage() {
       </Card>
 
       {/* Список отчетов */}
-      <Row gutter={16}>
-        <Col span={16}>
-          <Card title="Доступные документы" bordered={true} style={{ borderRadius: "4px" }}>
+      <Row gutter={[24, 24]}>
+        <Col xs={24} md={14} lg={16}>
+          <Card title="Доступные документы" bordered={true} style={{ borderRadius: "4px", height: "100%" }}>
             <List
               itemLayout="horizontal"
               dataSource={reportFiles}
@@ -59,13 +62,42 @@ export default function ReportsPage() {
           </Card>
         </Col>
 
-        {/* Блок быстрых действий */}
-        <Col span={8}>
-          <Card title="Быстрый экспорт" bordered={true} style={{ borderRadius: "4px" }}>
-            <Space direction="vertical" style={{ width: "100%" }}>
-              <Button block icon={<FileExcelOutlined />} onClick={() => handleDownload("Вся база данных")}>Экспорт всей базы</Button>
-              <Button block icon={<FilePdfOutlined />} onClick={() => handleDownload("Сводка")}>Печать текущей сводки</Button>
-              <Button block type="primary" icon={<BarChartOutlined />} onClick={() => handleDownload("Отчет за квартал")}>Сформировать PDF за квартал</Button>
+        {/* Быстрый экспорт */}
+        <Col xs={24} md={10} lg={8}>
+          <Card title="Быстрый экспорт" bordered={true} style={{ borderRadius: "4px", height: "100%" }}>
+            <Space direction="vertical" style={{ width: "100%" }} size="middle">
+              <Button 
+                block 
+                icon={<FileExcelOutlined />} 
+                style={{ height: "36px" }}
+                onClick={() => handleDownload("Вся база данных")}
+              >
+                Экспорт всей базы
+              </Button>
+              
+              <Button 
+                block 
+                icon={<FilePdfOutlined />} 
+                style={{ height: "36px" }}
+                onClick={() => handleDownload("Сводка")}
+              >
+                Печать текущей сводки
+              </Button>
+              
+              <Button 
+                block 
+                type="primary" 
+                icon={<BarChartOutlined />} 
+                style={{ 
+                  height: "36px", 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center" 
+                }} 
+                onClick={() => handleDownload("Отчет за квартал")}
+              >
+                PDF за квартал
+              </Button>
             </Space>
           </Card>
         </Col>
