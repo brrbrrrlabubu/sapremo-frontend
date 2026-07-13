@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { ConfigProvider, theme as antTheme } from "antd";
+import { useEffect } from "react";
+import { ConfigProvider, App as AntdApp, theme as antTheme } from "antd";
 import AppRouter from "./router/AppRouter";
 import { useTranslation } from "react-i18next";
 import { useUIStore } from "./store/useUIStore";
@@ -29,7 +29,11 @@ export default function App() {
         algorithm: theme === "dark" ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
         token: {
           colorPrimary: "#1890ff", // фирменный яркий голубой цвет
-          borderRadius: 4,
+          borderRadius: 6,
+          fontFamily: "Inter, sans-serif",
+          colorSuccess: "#52c41a",
+          colorWarning: "#fa8c16",
+          colorError: "#ff4d4f",
           fontSize: 14,
           
           // Глобальное исправление фонов рабочих областей во всех модулях
@@ -90,7 +94,9 @@ export default function App() {
         },
       }}
     >
-      <AppRouter />
+      <AntdApp>
+        <AppRouter />
+      </AntdApp>
     </ConfigProvider>
   );
 }

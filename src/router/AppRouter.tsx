@@ -8,6 +8,8 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import LoginPage from "../pages/LoginPage";
 import AnalyticsPage from "../pages/AnalyticsPage";
 import ReportsPage from "../pages/ReportsPage";
+import InventoryPage from "../pages/InventoryPage";
+import WarehouseRequestsPage from "../pages/WarehouseRequestsPage";
 
 const router = createBrowserRouter([
   {
@@ -17,14 +19,16 @@ const router = createBrowserRouter([
       {
         element: <ProtectedRoute allowedRoles={["admin", "manager", "factory", "accountant"]} />,
         children: [
-          { path: "/", element: <DashboardPage /> },
-          { path: "/shipments", element: <ShipmentsPage /> },
-          { path: "/warehouses", element: <WarehousePage /> },
-          { path: "/finance", element: <FinancePage /> },
-          { path: "/analytics", element: <AnalyticsPage /> },
-          { path: "/reports", element: <ReportsPage /> },
+          { index: true, element: <DashboardPage /> },
+          { path: "shipments", element: <ShipmentsPage /> },
+          { path: "warehouses", element: <WarehousePage /> },
+          { path: "finance", element: <FinancePage /> },
+          { path: "analytics", element: <AnalyticsPage /> },
+          { path: "reports", element: <ReportsPage /> },
+          { path: "inventory", element: <InventoryPage /> },
+          { path: "requests", element: <WarehouseRequestsPage /> },
         ],
-      }, 
+      },
     ],
   },
   {
@@ -32,7 +36,7 @@ const router = createBrowserRouter([
     element: <LoginPage />,
   },
 ], {
-  basename: "/sapremo-frontend", // Вот здесь магия!
+  basename: "/sapremo-frontend",
 });
 
 export default function AppRouter() {

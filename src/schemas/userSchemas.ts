@@ -8,6 +8,9 @@ export const loginSchema = z.object({
 export const shipmentSchema = z.object({
     product: z.string().min(1, 'Укажите продукт'),
     quantity: z.number().positive('Количество должно быть больше 0'),
+    price: z.number().positive('Цена должна быть больше 0'),
+    storageExpiry: z.string().min(1, 'Укажите срок хранения'),
+    manufactureDate: z.string().min(1, 'Укажите дату производства'),
     date: z.string().min(1, 'Укажите дату'),
 })
 

@@ -1,71 +1,90 @@
-import { Card, Typography, List, Button, Row, Col, Space, notification } from "antd";
-import { FilePdfOutlined, FileExcelOutlined, DownloadOutlined, BarChartOutlined } from "@ant-design/icons";
+import { useEffect, useState } from "react";
+import { Card, Typography, Table, Button, Row, Col, Space, App, Tag } from "antd";
+import { FilePdfOutlined, FileExcelOutlined, BarChartOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
+import { InvoiceService } from "../services/invoice.service";
+import type { Invoice } from "../types/api.types";
+import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 
 export default function ReportsPage() {
-  // Функция-заглушка для имитации скачивания
-  const handleDownload = (fileName: string) => {
-    notification.success({
-      message: "Загрузка началась",
-      description: `Файл "${fileName}" готовится к скачиванию...`,
-      placement: "bottomRight",
-    });
+  const { t } = useTranslation();
+  const { notification } = App.useApp();
+  
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
+
+  const fetchInvoices = async () => {
+    try {
+      setLoading(true);
+      const data = await InvoiceService.getInvoices();
+      setInvoices(data.results || []);
+    } catch (error) {
+      notification.error({
+        message: t('errors.fetchFailed', 'Ошибка загрузки накладных'),
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const reportFiles = [
-    { title: "Финансовый отчет за Июнь 2026", type: "PDF", icon: <FilePdfOutlined /> },
-    { title: "Реестр всех отгрузок (Общий)", type: "Excel", icon: <FileExcelOutlined /> },
-    { title: "Аналитика эффективности складов", type: "PDF", icon: <BarChartOutlined /> },
+  const handleDownload = async (id: string, format: 'pdf' | 'excel') => {
+    setDownloadingId(`${id}-${format}`);
+    try {
+      await InvoiceService.downloadInvoice(id, format);
+      notification.success({
+        message: t('actions.download'),
+        description: `invoice_${id.substring(0, 8)}.${format === 'pdf' ? 'pdf' : 'xlsx'}`,
+        placement: "bottomRight",
+      });
+    } catch (error) {
+      notification.error({ message: t('errors.downloadFailed', 'Ошибка при скачивании файла') });
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const columns = [
+    { title: 'ID', dataIndex: 'id', key: 'id', render: (id: string) => <Text code style={{ fontSize: 11 }}>{id.substring(0, 8)}…</Text> },
+    { title: t('reports.warehouse'), dataIndex: 'warehouse_id', key: 'warehouse_id', render: (id: string) => <Text code style={{ fontSize: 11 }}>{id ? id.substring(0, 8) : 'N/A'}…</Text> },
+    { title: t('reports.amount'), dataIndex: 'total_amount', key: 'total_amount', render: (amount: string) => <Tag color="blue">{amount || '0'} сом</Tag> },
+    { title: t('reports.itemsCount'), dataIndex: 'items', key: 'items', render: (items: any[]) => items ? items.length : 0 },
+    { title: t('reports.date'), dataIndex: 'created_at', key: 'created_at', render: (date: string) => date ? dayjs(date).format('DD.MM.YYYY HH:mm') : '—' },
+    { title: t('common.actions'), key: 'actions', render: (_: any, record: Invoice) => (
+        <Space>
+          <Button type="link" icon={<FilePdfOutlined />} onClick={() => handleDownload(record.id, 'pdf')} loading={downloadingId === `${record.id}-pdf`}>PDF</Button>
+          <Button type="link" icon={<FileExcelOutlined />} onClick={() => handleDownload(record.id, 'excel')} loading={downloadingId === `${record.id}-excel`}>Excel</Button>
+        </Space>
+      ),
+    },
   ];
 
   return (
     <div>
-      {/* Шапка в стиле Главной */}
-      <Card 
-        bordered={true} 
-        style={{ marginBottom: 24, borderRadius: "4px", border: "1px solid #e8e8e8" }} 
-        styles={{ body: { padding: "20px 24px" } }}
-      >
-        <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px" }}>
-          Отчеты
-        </Title>
-        <Text type="secondary" style={{ fontSize: "14px", marginTop: 4, display: "block" }}>
-          Формирование и экспорт аналитических данных для руководства завода.
-        </Text>
+      <Card bordered={true} style={{ marginBottom: 24, borderRadius: "4px" }}>
+        <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px" }}>{t('reports.title')}</Title>
+        <Text type="secondary" style={{ fontSize: "14px", marginTop: 4, display: "block" }}>{t('reports.subtitle')}</Text>
       </Card>
 
-      {/* Список отчетов */}
       <Row gutter={16}>
-        <Col span={16}>
-          <Card title="Доступные документы" bordered={true} style={{ borderRadius: "4px" }}>
-            <List
-              itemLayout="horizontal"
-              dataSource={reportFiles}
-              renderItem={(item) => (
-                <List.Item
-                  actions={[
-                    <Button type="link" icon={<DownloadOutlined />} onClick={() => handleDownload(item.title)}>Скачать</Button>
-                  ]}
-                >
-                  <List.Item.Meta
-                    avatar={item.icon}
-                    title={item.title}
-                    description={`Формат: ${item.type}`}
-                  />
-                </List.Item>
-              )}
-            />
+        <Col xs={24} md={16}>
+          <Card title={t('reports.invoicesList')} bordered={true} style={{ borderRadius: "4px" }}>
+            <Table loading={loading} columns={columns} dataSource={invoices} rowKey="id" pagination={{ pageSize: 20 }} scroll={{ x: 'max-content' }} locale={{ emptyText: t('reports.noData') }} />
           </Card>
         </Col>
 
-        {/* Блок быстрых действий */}
-        <Col span={8}>
-          <Card title="Быстрый экспорт" bordered={true} style={{ borderRadius: "4px" }}>
+        <Col xs={24} md={8}>
+          <Card title={t('reports.quickExport')} bordered={true} style={{ borderRadius: "4px" }}>
             <Space direction="vertical" style={{ width: "100%" }}>
-              <Button block icon={<FileExcelOutlined />} onClick={() => handleDownload("Вся база данных")}>Экспорт всей базы</Button>
-              <Button block icon={<FilePdfOutlined />} onClick={() => handleDownload("Сводка")}>Печать текущей сводки</Button>
-              <Button block type="primary" icon={<BarChartOutlined />} onClick={() => handleDownload("Отчет за квартал")}>Сформировать PDF за квартал</Button>
+              <Button block icon={<FileExcelOutlined />}>{t('reports.exportAll')}</Button>
+              <Button block icon={<FilePdfOutlined />}>{t('reports.printSummary')}</Button>
+              <Button block type="primary" icon={<BarChartOutlined />}>{t('reports.pdfQuarter')}</Button>
             </Space>
           </Card>
         </Col>

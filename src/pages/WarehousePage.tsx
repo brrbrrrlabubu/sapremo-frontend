@@ -1,277 +1,110 @@
-import { useState, useEffect } from "react";
-import { 
-  Table, 
-  Button, 
-  Modal, 
-  Form, 
-  Input, 
-  Select, 
-  Skeleton, 
-  Empty, 
-  Space, 
-  Tag, 
-  Typography, 
-  Card,
-  notification,
-  Popconfirm 
-} from "antd";
-import { PlusOutlined, DatabaseOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { useEffect, useState } from "react";
+import { Table, Skeleton, Empty, Space, Typography, Card, App } from "antd";
+import { DatabaseOutlined } from "@ant-design/icons";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import { useUIStore } from "../store/useUIStore"; // Импортируем наш стор интерфейса
+import { useUIStore } from "../store/useUIStore";
+import { useTranslation } from "react-i18next";
+import { axiosClient } from "../api/axiosClient";
 
 const { Title, Text } = Typography;
-const { Option } = Select;
 
-interface Warehouse {
-  id: string;
-  name: string;
-  type: "main" | "retail" | "transit";
-  address: string;
-  status: "active" | "inactive";
+interface WarehouseStat {
+  id?: string;
+  warehouse_id?: string;
+  warehouse_name?: string;
+  name?: string;
+  total_amount?: string;
+  count?: number;
+  [key: string]: any;
 }
 
 export default function WarehousePage() {
-  const currentUserRole = "admin"; 
-  const canManage = currentUserRole === "admin" || currentUserRole === "director";
-
-  // Подключаем тему из глобального состояния
+  const { t } = useTranslation();
+  const { notification } = App.useApp();
   const { theme } = useUIStore();
   const isDark = theme === "dark";
 
   const [loading, setLoading] = useState<boolean>(true);
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [form] = Form.useForm();
+  const [warehouses, setWarehouses] = useState<WarehouseStat[]>([]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setWarehouses([
-        { id: "1", name: "Главный склад Завод", type: "main", address: "г. Бишкек, ул. Промышленная 5", status: "active" },
-        { id: "2", name: "Транзитный склад Чуй", type: "transit", address: "Чуйская обл., с. Лебединовка", status: "active" },
-        { id: "3", name: "Розничная точка Вефа", type: "retail", address: "г. Бишкек, ТЦ Вефа", status: "inactive" },
-      ]);
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const showCreateModal = () => {
-    setEditingWarehouse(null);
-    form.resetFields();
-    setIsModalOpen(true);
-  };
-
-  const showEditModal = (warehouse: Warehouse) => {
-    setEditingWarehouse(warehouse);
-    form.setFieldsValue(warehouse); 
-    setIsModalOpen(true);
-  };
-
-  const handleSave = (values: any) => {
-    if (editingWarehouse) {
-      setWarehouses(warehouses.map(w => w.id === editingWarehouse.id ? { ...w, ...values } : w));
-      notification.success({
-        message: "Склад обновлен",
-        description: `Изменения в складе "${values.name}" успешно сохранены.`,
-      });
-    } else {
-      const newWarehouse: Warehouse = {
-        id: Date.now().toString(),
-        name: values.name,
-        type: values.type,
-        address: values.address,
-        status: "active",
-      };
-      setWarehouses([newWarehouse, ...warehouses]);
-      notification.success({
-        message: "Склад добавлен",
-        description: `Склад "${values.name}" успешно создан.`,
-      });
-    }
-    setIsModalOpen(false);
-    form.resetFields();
-  };
-
-  const handleDelete = (id: string, name: string) => {
-    setWarehouses(warehouses.filter(w => w.id !== id));
-    notification.warning({
-      message: "Склад удален",
-      description: `Склад "${name}" был успешно удален из системы.`,
-    });
-  };
+    const fetchWarehouses = async () => {
+      try {
+        setLoading(true);
+        const response = await axiosClient.get('/stats/warehouses/');
+        const data = Array.isArray(response.data) ? response.data : response.data.results || [];
+        setWarehouses(data);
+      } catch (error) {
+        notification.error({ message: t('errors.fetchFailed', 'Ошибка загрузки данных о складах') });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchWarehouses();
+  }, [notification, t]);
 
   const columns = [
     {
-      title: "Название склада",
-      dataIndex: "name",
+      title: t('warehouses.name'),
       key: "name",
-      render: (text: string) => (
+      render: (_: any, record: WarehouseStat) => (
         <Space>
           <DatabaseOutlined style={{ color: "#1890ff" }} /> 
-          {/* Исправлено: текст названия адаптируется под тему и не сливается */}
-          <strong style={{ color: isDark ? "rgba(255, 255, 255, 0.85)" : "#000000" }}>{text}</strong>
+          <strong style={{ color: isDark ? "rgba(255, 255, 255, 0.85)" : "#000000" }}>
+            {record.warehouse_name || record.name || record.warehouse_id || 'N/A'}
+          </strong>
         </Space>
       ),
     },
     {
-      title: "Тип",
-      dataIndex: "type",
-      key: "type",
-      render: (type: string) => {
-        // Мягкие цвета для тегов в тёмной теме, чтобы не выжигали глаза
-        const config: Record<string, { color: string; text: string }> = {
-          main: { color: isDark ? "geekblue-dark" : "blue", text: "Производственный" },
-          transit: { color: isDark ? "volcano-dark" : "orange", text: "Транзитный" },
-          retail: { color: isDark ? "purple-dark" : "purple", text: "Розничный" },
-        };
-        return <Tag color={config[type]?.color}>{config[type]?.text}</Tag>;
-      },
-    },
-    {
-      title: "Адрес",
-      dataIndex: "address",
-      key: "address",
-    },
-    {
-      title: "Статус",
-      dataIndex: "status",
-      key: "status",
-      render: (status: string) => (
-        <Tag color={status === "active" ? (isDark ? "green-dark" : "success") : (isDark ? "red-dark" : "error")}>
-          {status === "active" ? "Активен" : "Заблокирован"}
-        </Tag>
+      title: 'ID',
+      key: 'warehouse_id',
+      render: (_: any, record: WarehouseStat) => (
+        <Text code style={{ fontSize: 11, color: isDark ? "rgba(255, 255, 255, 0.65)" : "inherit" }}>
+          {(record.warehouse_id || record.id || '').toString().substring(0, 8)}…
+        </Text>
       ),
     },
     {
-      title: "Действия",
-      key: "actions",
-      render: (_: any, record: Warehouse) => (
-        <Space size="middle">
-          <Button 
-            type="text" 
-            icon={<EditOutlined style={{ color: "#1890ff" }} />} 
-            disabled={!canManage}
-            onClick={() => showEditModal(record)}
-          />
-          <Popconfirm
-            title="Удалить склад?"
-            description="Вы уверены, что хотите удалить этот склад из базы данных?"
-            onConfirm={() => handleDelete(record.id, record.name)}
-            okText="Да"
-            cancelText="Нет"
-            disabled={!canManage}
-          >
-            <Button 
-              type="text" 
-              danger 
-              icon={<DeleteOutlined />} 
-              disabled={!canManage}
-            />
-          </Popconfirm>
-        </Space>
+      title: t('warehouses.totalAmount'),
+      key: 'total_amount',
+      render: (_: any, record: WarehouseStat) => (
+        <Text strong style={{ color: "#1890ff" }}>
+          {record.total_amount || record.count || '0'}
+        </Text>
       ),
     },
   ];
 
   return (
     <div>
-      {/* Идеальный адаптивный заголовок в рамочке */}
-      <Card 
-        bordered={true} 
-        style={{ 
-          marginBottom: 24, 
-          borderRadius: "4px", 
-          // Динамическая рамка и фон, которые зависят от состояния темы
-          border: `1px solid ${isDark ? "#303030" : "#e8e8e8"}`,
-          boxShadow: isDark ? "none" : "0 1px 2px rgba(0,0,0,0.02)",
-          background: isDark ? "#1f1f1f" : "#ffffff"
-        }}
-        styles={{ body: { padding: "16px 24px" } }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <div>
-              <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px", fontWeight: 600 }}>
-                 Управление складами
-              </Title>
-              {/* Исправлено: второстепенный текст плавно тускнеет в темноте */}
-              <Text type="secondary" style={{ fontSize: "14px", marginTop: 4, display: "block", color: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0, 0, 0, 0.45)" }}>
-                Мониторинг, редактирование и удаление складских точек завода.
-              </Text>
-            </div>
-            <div style={{ width: 40, height: 40 }}>
-              <DotLottieReact 
-                src="https://lottie.host/embed/8410b0fb-7182-4160-b747-d5d14df21598/E9G9XfRsh2.json" 
-                autoplay 
-                loop 
-              />
-            </div>
+      <Card bordered={true} style={{ marginBottom: 24, borderRadius: "4px" }} styles={{ body: { padding: "16px 24px" } }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+          <div>
+            <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px" }}>{t('warehouses.title')}</Title>
+            <Text type="secondary" style={{ color: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0, 0, 0, 0.45)" }}>
+              {t('warehouses.subtitle')}
+            </Text>
           </div>
-          
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />} 
-            onClick={showCreateModal}
-            disabled={!canManage}
-            style={{ height: "36px" }}
-          >
-            Добавить склад
-          </Button>
+          <div style={{ width: 40, height: 40 }}>
+            <DotLottieReact src="https://lottie.host/embed/8410b0fb-7182-4160-b747-d5d14df21598/E9G9XfRsh2.json" autoplay loop />
+          </div>
         </div>
       </Card>
 
       {loading ? (
         <Skeleton active paragraph={{ rows: 5 }} />
       ) : warehouses.length === 0 ? (
-        <Empty description="Нет доступных складов" />
+        <Empty description={t('warehouses.noData')} />
       ) : (
         <Table 
           dataSource={warehouses} 
           columns={columns} 
-          rowKey="id" 
+          rowKey={(record, i) => record.id || record.warehouse_id || String(i)} 
           pagination={false} 
+          scroll={{ x: 'max-content' }} 
         />
       )}
-
-      <Modal
-        title={editingWarehouse ? "Редактирование склада" : "Добавление нового склада"}
-        open={isModalOpen}
-        onOk={() => form.submit()}
-        onCancel={() => setIsModalOpen(false)}
-        okText="Сохранить"
-        cancelText="Отмена"
-      >
-        <Form form={form} layout="vertical" onFinish={handleSave} style={{ marginTop: 16 }}>
-          <Form.Item
-            name="name"
-            label="Название склада"
-            rules={[{ required: true, message: "Введите название склада" }]}
-          >
-            <Input placeholder="Например, Центральный ангар №1" />
-          </Form.Item>
-
-          <Form.Item
-            name="type"
-            label="Тип склада"
-            rules={[{ required: true, message: "Выберите тип" }]}
-          >
-            <Select placeholder="Выберите тип из списка">
-              <Option value="main">Производственный</Option>
-              <Option value="transit">Транзитный</Option>
-              <Option value="retail">Розничный</Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="address"
-            label="Фактический адрес"
-            rules={[{ required: true, message: "Укажите адрес" }]}
-          >
-            <Input.TextArea placeholder="Улица, номер здания, ориентиры" rows={3} />
-          </Form.Item>
-        </Form>
-      </Modal>
     </div>
   );
 }
