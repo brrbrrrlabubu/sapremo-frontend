@@ -14,21 +14,26 @@ export default function ShipmentsPage() {
   const [form] = Form.useForm();
 
   const handleCreate = (values: any) => {
-    const selectedProduct = inventory.find(p => p.name === values.productName);
-    addShipment({
-      id: Date.now().toString(),
-      docNumber: `НАК-00${Math.floor(100 + Math.random() * 900)}`,
-      date: values.date.format("YYYY-MM-DD"),
-      warehouse: values.warehouse,
-      client: values.productName,
-      status: "transit",
-      comment: values.managerComment || "",
-      amount: (selectedProduct?.price || 0) * values.quantity
-    });
-    setIsModalOpen(false);
-    form.resetFields();
-    notification.success({ message: "Отгрузка создана" });
-  };
+  const selectedProduct = inventory.find(p => p.name === values.productName);
+  
+  const price = selectedProduct?.price || 0;
+  const quantity = values.quantity || 0;
+
+  addShipment({
+    id: Date.now().toString(),
+    docNumber: `НАК-00${Math.floor(100 + Math.random() * 900)}`,
+    date: values.date.format("YYYY-MM-DD"),
+    warehouse: values.warehouse,
+    client: values.productName, // Имя товара
+    status: "transit",
+    comment: values.managerComment || "",
+    amount: price * quantity // Четкий расчет
+  });
+
+  setIsModalOpen(false);
+  form.resetFields();
+  notification.success({ message: "Отгрузка создана" });
+};
 
   const columns = getShipmentColumns(
     token, 
