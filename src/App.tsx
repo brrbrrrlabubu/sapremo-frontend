@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { ConfigProvider, theme as antTheme } from "antd";
+import { ConfigProvider, theme as antTheme, App as AntdApp } from "antd"; // <-- Импортируем App из antd
 import AppRouter from "./router/AppRouter";
 import { useTranslation } from "react-i18next";
 import { useUIStore } from "./store/useUIStore";
@@ -90,7 +90,12 @@ export default function App() {
         },
       }}
     >
-      <AppRouter />
+      {/* Оборачиваем роутер в AntdApp. 
+        Теперь ЛЮБОЙ дочерний компонент сможет получать умные темные уведомления!
+      */}
+      <AntdApp>
+        <AppRouter />
+      </AntdApp>
     </ConfigProvider>
   );
 }

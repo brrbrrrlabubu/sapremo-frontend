@@ -1,11 +1,39 @@
-import { useState, useEffect } from "react";
-import { Table, Button, Modal, Form, Input, Select, DatePicker, Tabs, Tag, Typography, Space, Card, Row, Col, notification, Popconfirm, InputNumber } from "antd";
-import { PlusOutlined, FileTextOutlined, CalendarOutlined, UserOutlined, CheckCircleOutlined, CloseCircleOutlined, DeleteOutlined, PrinterOutlined } from "@ant-design/icons";
+import { useState, useEffect, useMemo } from "react";
+import { 
+  Table, 
+  Button, 
+  Modal, 
+  Form, 
+  Input, 
+  Select, 
+  DatePicker, 
+  Tabs, 
+  Tag, 
+  Typography, 
+  Space, 
+  Card, 
+  Row, 
+  Col, 
+  App, // <-- Изменено: заменили статический notification на компонент App
+  Popconfirm, 
+  InputNumber 
+} from "antd";
+import { 
+  PlusOutlined, 
+  FileTextOutlined, 
+  CalendarOutlined, 
+  UserOutlined, 
+  CheckCircleOutlined, 
+  CloseCircleOutlined, 
+  DeleteOutlined, 
+  PrinterOutlined,
+  ClockCircleOutlined 
+} from "@ant-design/icons";
 import dayjs from "dayjs";
 
 import { dataService } from "../services/dataService";
 import type { Shipment } from "../services/dataService";
-import { useUIStore } from "../store/useUIStore"; // Импортируем наш стор
+import { useUIStore } from "../store/useUIStore";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -16,6 +44,9 @@ export default function ShipmentsPage() {
 
   const { theme } = useUIStore();
   const isDark = theme === "dark";
+
+  // ХУК КОНТЕКСТА: Вытаскиваем умный notification, который знает про темную тему
+  const { notification } = App.useApp(); 
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [shipments, setShipments] = useState<Shipment[]>(dataService.getShipments());
@@ -67,16 +98,16 @@ export default function ShipmentsPage() {
     });
   };
 
-  const columns = [
+  const columns = useMemo(() => [
     { 
       title: "№ Документа", 
       dataIndex: "docNumber", 
       key: "docNumber", 
+      width: 150, 
       render: (text: string) => (
-        <Space>
+        <Space style={{ whiteSpace: "nowrap" }}>
           <FileTextOutlined style={{ color: "#1890ff" }} />
-          {/* Исправлено: цвет текста адаптируется к теме */}
-          <strong style={{ color: isDark ? "rgba(255, 255, 255, 0.85)" : "#000000" }}>{text}</strong>
+          <Text strong>{text}</Text>
         </Space>
       ) 
     },
@@ -84,21 +115,28 @@ export default function ShipmentsPage() {
       title: "Дата", 
       dataIndex: "date", 
       key: "date", 
+      width: 130, 
       render: (date: string) => (
-        <Space style={{ color: isDark ? "rgba(255, 255, 255, 0.65)" : "inherit" }}>
+        <Space style={{ whiteSpace: "nowrap" }}>
           <CalendarOutlined style={{ color: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0,0,0,0.45)" }} />
-          {date}
+          <Text type="secondary">{date}</Text>
         </Space>
       ) 
     },
-    { title: "Склад", dataIndex: "warehouse", key: "warehouse" },
+    { 
+      title: "Склад", 
+      dataIndex: "warehouse", 
+      key: "warehouse"
+    },
     { 
       title: "Клиент", 
       dataIndex: "client", 
       key: "client", 
+      width: 180, 
       render: (text: string) => (
-        <Space style={{ color: isDark ? "rgba(255, 255, 255, 0.85)" : "inherit" }}>
-          <UserOutlined />{text}
+        <Space style={{ display: "flex", alignItems: "center" }}>
+          <UserOutlined style={{ color: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0,0,0,0.45)", flexShrink: 0 }} />
+          <Text style={{ wordBreak: "break-word" }}>{text}</Text> 
         </Space>
       ) 
     },
@@ -106,9 +144,10 @@ export default function ShipmentsPage() {
       title: "Сумма", 
       dataIndex: "amount", 
       key: "amount", 
+      width: 140, 
       render: (amount: number) => (
-        <Text strong style={{ color: isDark ? "rgba(255, 255, 255, 0.85)" : "#000000" }}>
-          {amount?.toLocaleString()} сом
+        <Text strong style={{ whiteSpace: "nowrap" }}>
+          {(amount ?? 0).toLocaleString()} сом
         </Text>
       ) 
     },
@@ -116,35 +155,60 @@ export default function ShipmentsPage() {
       title: "Статус", 
       dataIndex: "status", 
       key: "status", 
+      width: 150, 
       render: (status: Shipment["status"]) => {
-        // Мягкая палитра для статусов ТТН в темной и светлой темах
-        const config: any = {
-          shipped: { bg: isDark ? "#142518" : "#efffe2", text: isDark ? "#52c41a" : "#52C41A", icon: <CheckCircleOutlined />, label: "Принято" },
-          transit: { bg: isDark ? "#2b2111" : "#fff6da", text: isDark ? "#faad14" : "#FAAD14", icon: <CloseCircleOutlined />, label: "В пути" },
-          discrepancy: { bg: isDark ? "#2c1517" : "#ffdfde", text: isDark ? "#ff4d4f" : "#F5222D", icon: <CloseCircleOutlined />, label: "С расхождением" },
-          defective: { bg: isDark ? "#2d1d11" : "#fff5e5", text: isDark ? "#fa8c16" : "#FA8C16", icon: <CloseCircleOutlined />, label: "Брак" },
+        const config: Record<Shipment["status"], { color: string; icon: any; label: string }> = {
+          shipped: { color: "success", icon: <CheckCircleOutlined />, label: "Принято" },
+          transit: { color: "warning", icon: <ClockCircleOutlined />, label: "В пути" },
+          discrepancy: { color: "error", icon: <CloseCircleOutlined />, label: "С расхождением" },
+          defective: { color: "volcano", icon: <CloseCircleOutlined />, label: "Брак" },
         };
-        const current = config[status];
-        return <Tag style={{ backgroundColor: current.bg, color: current.text, borderColor: isDark ? "transparent" : undefined, borderRadius: "4px" }}>{current.icon} {current.label}</Tag>;
+        const current = config[status] || { color: "default", icon: null, label: status };
+        return (
+          <Tag color={current.color} style={{ display: "inline-flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap" }}>
+            {current.icon} {current.label}
+          </Tag>
+        );
       }
     },
     {
       title: "Действия",
       key: "actions",
+      width: 220, 
       render: (_: any, record: Shipment) => (
-        <Space size="small">
-          <Button type="text" icon={<PrinterOutlined style={{ color: isDark ? "rgba(255, 255, 255, 0.65)" : "inherit" }} />} onClick={() => {
-            const win = window.open('', '_blank', 'width=800,height=600');
-            if (win) {
-              win.document.write(`<html><body><h1>Накладная ${record.docNumber}</h1><p>Склад: ${record.warehouse}</p><p>Сумма: ${record.amount} сом</p><script>window.onload = function() { window.print(); };</script></body></html>`);
-              win.document.close();
-            }
-          }} />
+        <Space size="small" style={{ display: "flex", flexWrap: "nowrap" }}>
+          <Button 
+            type="text" 
+            icon={<PrinterOutlined />} 
+            onClick={() => {
+              const win = window.open('', '_blank', 'width=800,height=600');
+              if (win) {
+                win.document.write(`<html><body><h1>Накладная ${record.docNumber}</h1><p>Склад: ${record.warehouse}</p><p>Сумма: ${record.amount} сом</p><script>window.onload = function() { window.print(); };</script></body></html>`);
+                win.document.close();
+              }
+            }} 
+          />
           {record.status === "transit" && (
-            <Button type="text" style={{ color: "#52c41a" }} icon={<CheckCircleOutlined />} disabled={!canManage} onClick={() => handleChangeStatus(record.id, "shipped", record.docNumber)}>Принять</Button>
+            <Button 
+              type="text" 
+              style={{ color: "#52c41a", whiteSpace: "nowrap", minWidth: "max-content" }} 
+              icon={<CheckCircleOutlined />} 
+              disabled={!canManage} 
+              onClick={() => handleChangeStatus(record.id, "shipped", record.docNumber)}
+            >
+              Принять
+            </Button>
           )}
           {record.status === "transit" && (
-            <Button type="text" style={{ color: "#1890FF" }} icon={<CloseCircleOutlined />} disabled={!canManage} onClick={() => handleChangeStatus(record.id, "defective", record.docNumber)}>Брак</Button>
+            <Button 
+              type="text" 
+              style={{ color: "#1890FF", whiteSpace: "nowrap", minWidth: "max-content" }} 
+              icon={<CloseCircleOutlined />} 
+              disabled={!canManage} 
+              onClick={() => handleChangeStatus(record.id, "defective", record.docNumber)}
+            >
+              Брак
+            </Button>
           )}
           <Popconfirm title="Удалить?" disabled={!canManage} onConfirm={() => handleDelete(record.id, record.docNumber)}>
             <Button type="text" danger icon={<DeleteOutlined />} disabled={!canManage} />
@@ -152,15 +216,35 @@ export default function ShipmentsPage() {
         </Space>
       ),
     },
-  ];
+  ], [isDark, canManage]);
 
   const renderTable = (statusFilter?: string) => {
     const data = statusFilter ? shipments.filter(s => s.status === statusFilter) : shipments;
-    return <Table dataSource={data} columns={columns} rowKey="id" pagination={false} style={{ marginTop: 16 }} />;
+    return (
+      <Table 
+        dataSource={data} 
+        columns={columns} 
+        rowKey="id" 
+        pagination={false} 
+        scroll={{ x: "max-content" }} 
+        style={{ marginTop: 16 }} 
+      />
+    );
   };
 
   return (
-    <div>
+    <div 
+      style={{
+        minHeight: "calc(100vh - 64px)", 
+        width: "100%",
+        background: isDark ? "#141414" : "#f5f5f5", 
+        padding: "24px",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
+        overflowX: "hidden" 
+      }}
+    >
       <Card 
         bordered={true} 
         style={{ 
@@ -174,9 +258,9 @@ export default function ShipmentsPage() {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px", fontWeight: 600 }}> Отгрузки товара</Title>
+            <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px", fontWeight: 600 }}>Отгрузки товара</Title>
             <Text type="secondary" style={{ fontSize: "14px", marginTop: 4, display: "block", color: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0, 0, 0, 0.45)" }}>
-              Оперативная сводка системы логистики завода. Оформление ТТН и контроль статусов.
+              Оперативная сводка системы логистики завода. Оформительные ТТН и контроль статусов.
             </Text>
           </div>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)} disabled={!canManage} style={{ height: "36px" }}>Создать отгрузку</Button>
