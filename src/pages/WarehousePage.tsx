@@ -1,111 +1,110 @@
-import { useState, useEffect } from "react";
-import { Table, Button, Modal, Form, Input, Select, Skeleton, theme, notification } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
-import PageHeader from "../components/PageHeader";
-import type { Warehouse } from "../types/warehouse"; 
-import { getWarehouseColumns } from "../utils/warehouseColumns";
-import { WAREHOUSES } from "../constants/warehouses";
+import { useEffect, useState } from "react";
+import { Table, Skeleton, Empty, Space, Typography, Card, App } from "antd";
+import { DatabaseOutlined } from "@ant-design/icons";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { useUIStore } from "../store/useUIStore";
+import { useTranslation } from "react-i18next";
+import { axiosClient } from "../api/axiosClient";
+
+const { Title, Text } = Typography;
+
+interface WarehouseStat {
+  id?: string;
+  warehouse_id?: string;
+  warehouse_name?: string;
+  name?: string;
+  total_amount?: string;
+  count?: number;
+  [key: string]: any;
+}
 
 export default function WarehousePage() {
-  const { token } = theme.useToken();
-  const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [confirmLoading, setConfirmLoading] = useState(false);
-  const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [form] = Form.useForm();
+  const { t } = useTranslation();
+  const { notification } = App.useApp();
+  const { theme } = useUIStore();
+  const isDark = theme === "dark";
+
+  const [loading, setLoading] = useState<boolean>(true);
+  const [warehouses, setWarehouses] = useState<WarehouseStat[]>([]);
 
   useEffect(() => {
-    setWarehouses(WAREHOUSES.map(w => ({ ...w, status: "active" })));
-    setLoading(false);
-  }, []);
-
-  const handleSave = (values: any) => {
-    setConfirmLoading(true);
-    setTimeout(() => {
-      if (editingWarehouse) {
-        setWarehouses(warehouses.map(w => w.id === editingWarehouse.id ? { ...w, ...values } : w));
-        notification.success({ message: "Склад обновлен" });
-      } else {
-        setWarehouses([{ id: Date.now().toString(), ...values, status: "active" }, ...warehouses]);
-        notification.success({ message: "Склад добавлен" });
+    const fetchWarehouses = async () => {
+      try {
+        setLoading(true);
+        const response = await axiosClient.get('/stats/warehouses/');
+        const data = Array.isArray(response.data) ? response.data : response.data.results || [];
+        setWarehouses(data);
+      } catch (error) {
+        notification.error({ message: t('errors.fetchFailed', 'Ошибка загрузки данных о складах') });
+      } finally {
+        setLoading(false);
       }
-      setConfirmLoading(false);
-      setIsModalOpen(false);
-      form.resetFields();
-    }, 500);
-  };
+    };
+    fetchWarehouses();
+  }, [notification, t]);
 
-  const columns = getWarehouseColumns(
-    token,
-    (r) => { setEditingWarehouse(r); form.setFieldsValue(r); setIsModalOpen(true); },
-    (id) => setWarehouses(warehouses.filter(w => w.id !== id))
-  );
+  const columns = [
+    {
+      title: t('warehouses.name'),
+      key: "name",
+      render: (_: any, record: WarehouseStat) => (
+        <Space>
+          <DatabaseOutlined style={{ color: "#1890ff" }} /> 
+          <strong style={{ color: isDark ? "rgba(255, 255, 255, 0.85)" : "#000000" }}>
+            {record.warehouse_name || record.name || record.warehouse_id || 'N/A'}
+          </strong>
+        </Space>
+      ),
+    },
+    {
+      title: 'ID',
+      key: 'warehouse_id',
+      render: (_: any, record: WarehouseStat) => (
+        <Text code style={{ fontSize: 11, color: isDark ? "rgba(255, 255, 255, 0.65)" : "inherit" }}>
+          {(record.warehouse_id || record.id || '').toString().substring(0, 8)}…
+        </Text>
+      ),
+    },
+    {
+      title: t('warehouses.totalAmount'),
+      key: 'total_amount',
+      render: (_: any, record: WarehouseStat) => (
+        <Text strong style={{ color: "#1890ff" }}>
+          {record.total_amount || record.count || '0'}
+        </Text>
+      ),
+    },
+  ];
 
   return (
     <div>
-      <PageHeader title="🏭 Управление складами" />
-
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-        <Button 
-          type="primary" 
-          icon={<PlusOutlined />} 
-          onClick={() => { setEditingWarehouse(null); form.resetFields(); setIsModalOpen(true); }}
-        >
-          Добавить склад
-        </Button>
-      </div>
+      <Card bordered={true} style={{ marginBottom: 24, borderRadius: "4px" }} styles={{ body: { padding: "16px 24px" } }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+          <div>
+            <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px" }}>{t('warehouses.title')}</Title>
+            <Text type="secondary" style={{ color: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0, 0, 0, 0.45)" }}>
+              {t('warehouses.subtitle')}
+            </Text>
+          </div>
+          <div style={{ width: 40, height: 40 }}>
+            <DotLottieReact src="https://lottie.host/embed/8410b0fb-7182-4160-b747-d5d14df21598/E9G9XfRsh2.json" autoplay loop />
+          </div>
+        </div>
+      </Card>
 
       {loading ? (
-        <Skeleton active paragraph={{ rows: 3 }} />
+        <Skeleton active paragraph={{ rows: 5 }} />
+      ) : warehouses.length === 0 ? (
+        <Empty description={t('warehouses.noData')} />
       ) : (
-        <Table dataSource={warehouses} columns={columns} rowKey="id" pagination={false} />
+        <Table 
+          dataSource={warehouses} 
+          columns={columns} 
+          rowKey={(record, i) => record.id || record.warehouse_id || String(i)} 
+          pagination={false} 
+          scroll={{ x: 'max-content' }} 
+        />
       )}
-
-      <Modal 
-        title={editingWarehouse ? "Редактировать склад" : "Добавить склад"} 
-        open={isModalOpen} 
-        onOk={() => form.submit()} 
-        onCancel={() => setIsModalOpen(false)}
-        confirmLoading={confirmLoading}
-      >
-        <Form form={form} layout="vertical" onFinish={handleSave}>
-          <Form.Item 
-            name="name" 
-            label="Название" 
-            rules={[
-              { required: true, message: "Введите название склада!" },
-              { whitespace: true, message: "Название не может состоять из пробелов" },
-              { min: 3, message: "Минимум 3 символа" }
-            ]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item 
-            name="type" 
-            label="Тип" 
-            rules={[{ required: true, message: "Выберите тип склада!" }]}
-          >
-            <Select placeholder="Выберите тип">
-              <Select.Option value="main">Производственный</Select.Option>
-              <Select.Option value="transit">Транзитный</Select.Option>
-              <Select.Option value="retail">Розничный</Select.Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item 
-            name="address" 
-            label="Адрес" 
-            rules={[
-              { required: true, message: "Введите адрес склада!" },
-              { whitespace: true, message: "Адрес не может состоять из пробелов" }
-            ]}
-          >
-            <Input.TextArea rows={3} />
-          </Form.Item>
-        </Form>
-      </Modal>
     </div>
   );
 }

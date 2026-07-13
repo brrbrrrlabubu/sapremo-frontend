@@ -1,51 +1,39 @@
-import React from 'react';
+import { Button, Select } from 'antd';
 import { useUIStore } from '../store/useUIStore';
+import { BulbOutlined, BulbFilled } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 
-export const ThemeLangSelector: React.FC = () => {
+interface ThemeLangSelectorProps {
+  compact?: boolean;
+}
+
+export const ThemeLangSelector: React.FC<ThemeLangSelectorProps> = ({ compact = false }) => {
+  const { t } = useTranslation();
   const { theme, lang, toggleTheme, setLang } = useUIStore();
   const isDark = theme === 'dark';
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-      {/* Чистая кнопка переключения темы без Ant Design и иконок */}
-      <button
-        onClick={toggleTheme}
-        style={{
-          background: isDark ? '#2b2b2b' : '#f5f5f5',
-          color: isDark ? '#ffffff' : '#000000',
-          border: `1px solid ${isDark ? '#434343' : '#d9d9d9'}`,
-          padding: '6px 12px',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          fontSize: '13px',
-          fontWeight: 500,
-          transition: 'all 0.3s',
-          outline: 'none'
-        }}
+    <div style={{ display: 'flex', alignItems: 'center', gap: compact ? '6px' : '12px', flexShrink: 0 }}>
+      {/* Переключатель темы — только иконка на мобильных */}
+      <Button 
+        onClick={toggleTheme} 
+        icon={isDark ? <BulbFilled style={{ color: '#faad14' }} /> : <BulbOutlined />}
+        size={compact ? "small" : "middle"}
       >
-        {isDark ? 'Тёмная тема' : 'Светлая тема'}
-      </button>
+        {!compact && (isDark ? t('common.darkTheme') : t('common.lightTheme'))}
+      </Button>
 
-      {/* Чистый нативный селект для выбора языка */}
-      <select
+      {/* Выбор языка */}
+      <Select
         value={lang}
-        onChange={(e) => setLang(e.target.value)}
-        style={{
-          background: isDark ? '#2b2b2b' : '#ffffff',
-          color: isDark ? '#ffffff' : '#000000',
-          border: `1px solid ${isDark ? '#434343' : '#d9d9d9'}`,
-          padding: '5px 8px',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          fontSize: '13px',
-          fontWeight: 500,
-          outline: 'none',
-          transition: 'all 0.3s'
-        }}
-      >
-        <option value="ru" style={{ background: isDark ? '#2b2b2b' : '#ffffff' }}>RU</option>
-        <option value="en" style={{ background: isDark ? '#2b2b2b' : '#ffffff' }}>EN</option>
-      </select>
+        onChange={(value) => setLang(value as 'ru' | 'en')}
+        style={{ width: compact ? 62 : 75 }}
+        size={compact ? "small" : "middle"}
+        options={[
+          { value: 'ru', label: 'RU' },
+          { value: 'en', label: 'EN' },
+        ]}
+      />
     </div>
   );
 };

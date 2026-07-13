@@ -1,66 +1,72 @@
-import { Card, Row, Col, Statistic, Table } from "antd";
+import { useEffect, useState } from "react";
+import { Card, Row, Col, Typography, Statistic, Table, App } from "antd";
 import { LineChartOutlined, TeamOutlined, FileTextOutlined, ShoppingCartOutlined } from "@ant-design/icons";
-import PageHeader from "../components/PageHeader";
-import { WAREHOUSES } from "../constants/warehouses";
-import { useShipmentStore } from "../store/shipmentStore";
+import { useTranslation } from "react-i18next";
+import { axiosClient } from "../api/axiosClient";
+
+const { Title, Text } = Typography;
 
 export default function AnalyticsPage() {
-  const { shipments } = useShipmentStore();
+  const { t } = useTranslation();
+  const { notification } = App.useApp();
+  
+  const [stats, setStats] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // 1. Расчет общей статистики
-  const totalTurnover = shipments.reduce((sum, s) => sum + (s.amount || 0), 0);
-  const activeShipmentsCount = shipments.filter(s => s.status === "transit").length;
+  useEffect(() => {
+    fetchStats();
+  }, []);
 
-  const stats = [
-    { title: "Общий оборот", value: totalTurnover.toLocaleString(), suffix: "сом", icon: <LineChartOutlined /> },
-    { title: "Активных складов", value: WAREHOUSES.length.toString(), icon: <TeamOutlined /> },
-    { title: "Всего отгрузок", value: shipments.length.toString(), icon: <FileTextOutlined /> },
-    { title: "Товаров в пути", value: activeShipmentsCount.toString(), icon: <ShoppingCartOutlined /> },
-  ];
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosClient.get('/stats/warehouses/');
+      const data = Array.isArray(response.data) ? response.data : response.data.results || [];
+      setStats(data);
+    } catch (error) {
+      notification.error({ message: t('common.errorLoading') });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // 2. Расчет данных для таблицы (группировка по складам)
-  const dataSource = WAREHOUSES.map((w) => {
-    const warehouseShipments = shipments.filter(s => s.warehouse === w.name);
-    const turnover = warehouseShipments.reduce((sum, s) => sum + (s.amount || 0), 0);
-    
-    return {
-      key: w.id,
-      name: w.name,
-      turnover: `${turnover.toLocaleString()} сом`,
-      status: 'Активен'
-    };
-  });
-
+  // Колонки таблицы, адаптированные под данные от API
   const columns = [
-    { title: 'Название склада', dataIndex: 'name', key: 'name' },
-    { title: 'Оборот', dataIndex: 'turnover', key: 'turnover' },
-    { title: 'Статус', dataIndex: 'status', key: 'status' },
+    { title: t('analytics.table.warehouse'), dataIndex: 'warehouse_name', key: 'warehouse_name' },
+    { title: t('analytics.table.value'), dataIndex: 'value', key: 'value', render: (val: any) => val?.toLocaleString() },
   ];
 
   return (
     <div>
-      <PageHeader title="💷 Аналитика" />
+      <Card bordered={true} style={{ marginBottom: 24, borderRadius: "4px" }}>
+        <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px" }}>{t('analytics.title')}</Title>
+        <Text type="secondary">{t('analytics.subtitle')}</Text>
+      </Card>
 
-      {/* Блок с показателями */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
-        {stats.map((item, index) => (
-          <Col span={6} key={index}>
+        {[
+          { title: t('analytics.avgTurnover'), value: "N/A", suffix: t('common.som'), icon: <LineChartOutlined /> },
+          { title: t('analytics.activePoints'), value: stats.length.toString(), icon: <TeamOutlined /> },
+          { title: t('analytics.requests'), value: "N/A", icon: <FileTextOutlined /> },
+          { title: t('analytics.inTransit'), value: "N/A", icon: <ShoppingCartOutlined /> },
+        ].map((item, index) => (
+          <Col xs={24} sm={12} md={6} key={index}>
             <Card hoverable style={{ textAlign: 'center', borderRadius: '4px' }}>
-              <Statistic 
-                title={item.title} 
-                value={item.value} 
-                suffix={item.suffix}
-                prefix={item.icon} 
-                valueStyle={{ fontSize: "22px", fontWeight: 600 }}
-              />
+              <Statistic title={item.title} value={item.value} suffix={item.suffix} prefix={item.icon} valueStyle={{ fontSize: "22px", fontWeight: 600 }} />
             </Card>
           </Col>
         ))}
       </Row>
 
-      {/* Нижняя таблица */}
-      <Card title="Детальный отчет по складам" bordered={true} style={{ borderRadius: "4px" }}>
-        <Table dataSource={dataSource} columns={columns} pagination={false} />
+      <Card title={t('analytics.details')} bordered={true} style={{ borderRadius: "4px" }}>
+        <Table 
+          loading={loading}
+          dataSource={stats} 
+          columns={columns} 
+          rowKey={(record: any) => record.id || record.warehouse_id} 
+          pagination={false} 
+          scroll={{ x: 'max-content' }} 
+        />
       </Card>
     </div>
   );

@@ -1,24 +1,24 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { useUserStore } from "../store/useUserStore"; // Импортируем стор
+import { useUserStore } from "../store/useUserStore";
 
 interface ProtectedRouteProps {
   allowedRoles?: string[];
 }
 
 export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
-  // Получаем пользователя из стора
-  const user = useUserStore((state) => state.user);
+  const { isAuthenticated, user } = useUserStore();
 
-  // 1. Если пользователя нет (null) - уводим на логин
-  if (!user) {
+  // 1. Если пользователь не авторизован (нет токена) — перенаправляем на логин,
+  //    сохраняя текущий URL для корректного Redirect Back после успешного входа
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // 2. Если роль есть, но она не входит в разрешенный список - уводим на главную
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  // 2. Если список ролей задан и роль пользователя не входит — на главную
+  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
   }
 
-  // 3. Если всё ок - показываем страницу
+  // 3. Доступ разрешён — рендерим дочерние маршруты
   return <Outlet />;
 }
