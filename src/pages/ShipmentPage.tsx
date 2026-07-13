@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Table, Button, Modal, Form, Select, DatePicker, Tabs, InputNumber, theme, notification, Input} from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { useShipmentStore } from "../store/shipmentStore"; 
-import { inventory } from "../data/inventoryData"; // ИСПРАВЛЕНО: теперь путь верный
+import { inventory } from "../constants/products"; // ИСПРАВЛЕНО: теперь путь верный
 import PageHeader from "../components/PageHeader";
 import { getShipmentColumns } from "../utils/shipmentColumns";
+import { WAREHOUSES } from "../constants/warehouses";
 
 export default function ShipmentsPage() {
   const { token } = theme.useToken();
@@ -55,7 +56,11 @@ export default function ShipmentsPage() {
           </Form.Item>
           <Form.Item name="warehouse" label="Склад" rules={[{ required: true, message: "Выберите склад" }]}>
             <Select placeholder="Выберите склад">
-              <Select.Option value="Главный склад Завод">Главный склад Завод</Select.Option>
+              {WAREHOUSES.map((w) => (
+                <Select.Option key={w.id} value={w.name}>
+                  {w.name}
+                </Select.Option>
+                ))}
             </Select>
           </Form.Item>
           <Form.Item name="productName" label="Товар" rules={[{ required: true, message: "Выберите товар" }]}>

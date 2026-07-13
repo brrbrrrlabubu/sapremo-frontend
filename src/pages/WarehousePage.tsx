@@ -4,6 +4,7 @@ import { PlusOutlined } from "@ant-design/icons";
 import PageHeader from "../components/PageHeader";
 import type { Warehouse } from "../types/warehouse"; 
 import { getWarehouseColumns } from "../utils/warehouseColumns";
+import { WAREHOUSES } from "../constants/warehouses";
 
 export default function WarehousePage() {
   const { token } = theme.useToken();
@@ -15,14 +16,8 @@ export default function WarehousePage() {
   const [form] = Form.useForm();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setWarehouses([
-        { id: "1", name: "Главный склад Завод", type: "main", address: "г. Бишкек, ул. Промышленная 5", status: "active" },
-        { id: "2", name: "Транзитный склад Чуй", type: "transit", address: "Чуйская обл., с. Лебединовка", status: "active" },
-      ]);
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
+    setWarehouses(WAREHOUSES.map(w => ({ ...w, status: "active" })));
+    setLoading(false);
   }, []);
 
   const handleSave = (values: any) => {

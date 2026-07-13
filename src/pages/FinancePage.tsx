@@ -1,5 +1,4 @@
-
-import { Table, Card, Row, Col, Statistic, Tabs, Tag } from "antd";
+import { Table, Card, Row, Col, Statistic, Tabs, Tag, Empty } from "antd"; 
 import { RiseOutlined, FallOutlined, BankOutlined } from "@ant-design/icons";
 import { useUIStore } from "../store/useUIStore"; 
 import PageHeader from "../components/PageHeader"; 
@@ -37,10 +36,9 @@ export default function FinancePage() {
 
   return (
     <div>
-      {/* Шапка с аналитикой */}
       <PageHeader title="💰 Финансовая аналитика" />
+      {/* Статистику можно оставить статичной, пока нет сложной логики расчета */}
       <Card bordered={true} style={{ marginBottom: 24, borderRadius: "4px" }}>
-
         <Row gutter={16}>
           <Col span={8}>
             <Card 
@@ -102,8 +100,14 @@ export default function FinancePage() {
       </Card>
 
       <Tabs items={[
-        { key: "1", label: "Движение средств", children: <Table dataSource={data} columns={columns} pagination={false} /> },
-        { key: "2", label: "Отчет по складам", children: <div style={{ padding: 20, color: isDark ? "rgba(255, 255, 255, 0.85)" : "inherit" }}>Здесь будет детализированный отчет...</div> },
+        { 
+          key: "1", 
+          label: "Движение средств", 
+          children: data.length > 0 
+            ? <Table dataSource={data} columns={columns} pagination={false} /> 
+            : <Empty description="Нет данных об отгрузках" /> // Теперь тут красиво отображается пустота
+        },
+        { key: "2", label: "Отчет по складам", children: <div style={{ padding: 20 }}>Раздел находится в разработке...</div> },
       ]} />
     </div>
   );

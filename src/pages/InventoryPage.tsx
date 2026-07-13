@@ -1,6 +1,6 @@
 import { Card, Table, Statistic } from 'antd';
 import PageHeader from "../components/PageHeader"; 
-import { inventory } from "../data/inventoryData";
+import { inventory } from "../constants/products";
 import { getInventoryColumns } from "../utils/inventoryColumns";
 
 export default function InventoryPage() {
