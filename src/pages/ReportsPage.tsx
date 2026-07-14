@@ -27,7 +27,7 @@ export default function ReportsPage() {
       setInvoices(data.results);
     } catch (error) {
       notification.error({
-        message: t('errors.fetchFailed', 'Ошибка загрузки накладных'),
+        message: t('reports.errorFetch', 'Ошибка загрузки накладных'),
       });
     } finally {
       setLoading(false);
@@ -45,7 +45,7 @@ export default function ReportsPage() {
       });
     } catch (error) {
       notification.error({
-        message: 'Ошибка при скачивании файла',
+        message: t('reports.errorDownload', 'Ошибка при скачивании файла'),
       });
     } finally {
       setDownloadingId(null);
@@ -54,31 +54,31 @@ export default function ReportsPage() {
 
   const columns = [
     {
-      title: 'ID',
+      title: t('reports.id', 'ID'),
       dataIndex: 'id',
       key: 'id',
       render: (id: string) => <Text code style={{ fontSize: 11 }}>{id.substring(0, 8)}…</Text>,
     },
     {
-      title: 'Склад',
+      title: t('reports.warehouse', 'Склад'),
       dataIndex: 'warehouse_id',
       key: 'warehouse_id',
       render: (id: string) => <Text code style={{ fontSize: 11 }}>{id ? id.substring(0, 8) : 'N/A'}…</Text>,
     },
     {
-      title: 'Сумма',
+      title: t('reports.amount', 'Сумма'),
       dataIndex: 'total_amount',
       key: 'total_amount',
       render: (amount: string) => <Tag color="blue">{amount || '0'} сом</Tag>,
     },
     {
-      title: 'Позиции',
+      title: t('reports.items', 'Позиции'),
       dataIndex: 'items',
       key: 'items',
       render: (items: any[]) => items ? items.length : 0,
     },
     {
-      title: 'Дата создания',
+      title: t('reports.createdAt', 'Дата создания'),
       dataIndex: 'created_at',
       key: 'created_at',
       render: (date: string) => date ? dayjs(date).format('DD.MM.YYYY HH:mm') : '—',
@@ -118,7 +118,7 @@ export default function ReportsPage() {
 
       <Row gutter={16}>
         <Col xs={24} md={16}>
-          <Card title="Накладные" bordered={true} style={{ borderRadius: "4px" }}>
+          <Card title={t('reports.invoices', 'Накладные')} bordered={true} style={{ borderRadius: "4px" }}>
             <Table 
               loading={loading}
               columns={columns} 
@@ -126,7 +126,7 @@ export default function ReportsPage() {
               rowKey="id" 
               pagination={{ pageSize: 20 }}
               scroll={{ x: 'max-content' }}
-              locale={{ emptyText: 'Нет накладных.' }}
+              locale={{ emptyText: t('reports.noInvoices', 'Нет накладных.') }}
             />
           </Card>
         </Col>

@@ -23,7 +23,7 @@ export default function WarehouseRequestsPage() {
       const data = await WarehouseOrderService.getOrders(1, 100);
       setOrders(data.results);
     } catch (error) {
-      notification.error({ message: 'Ошибка при загрузке заявок' });
+      notification.error({ message: t('warehouseRequests.errorLoading', 'Ошибка при загрузке заявок') });
     } finally {
       setLoading(false);
     }
@@ -38,10 +38,10 @@ export default function WarehouseRequestsPage() {
     setActionLoadingId(`${record.id}-${status}`);
     try {
       await WarehouseOrderService.updateStatus(record.id, status);
-      message.success(`Статус заявки обновлен на ${status}`);
+      message.success(`${t('warehouseRequests.statusUpdated', 'Статус заявки обновлен на')} ${status}`);
       fetchOrders();
     } catch (error) {
-      message.error('Не удалось обновить статус');
+      message.error(t('warehouseRequests.errorUpdating', 'Не удалось обновить статус'));
     } finally {
       setActionLoadingId(null);
     }
@@ -49,7 +49,7 @@ export default function WarehouseRequestsPage() {
 
   const columns = [
     {
-      title: '№ Заявки',
+      title: t('warehouseRequests.orderNo', '№ Заявки'),
       dataIndex: 'id',
       key: 'id',
       render: (text: string) => (
@@ -60,13 +60,13 @@ export default function WarehouseRequestsPage() {
       ),
     },
     {
-      title: 'Склад-отправитель',
+      title: t('warehouseRequests.senderWarehouse', 'Склад-отправитель'),
       dataIndex: 'warehouse_id',
       key: 'warehouse_id',
       render: (id: string) => <Text code>{id ? id.substring(0, 8) : 'N/A'}</Text>,
     },
     {
-      title: 'Позиции запроса',
+      title: t('warehouseRequests.requestItems', 'Позиции запроса'),
       dataIndex: 'items',
       key: 'items',
       render: (items: any[]) => (
@@ -82,13 +82,13 @@ export default function WarehouseRequestsPage() {
       ),
     },
     {
-      title: 'Дата создания',
+      title: t('warehouseRequests.createdAt', 'Дата создания'),
       dataIndex: 'created_at',
       key: 'created_at',
       render: (date: string) => dayjs(date).format('DD.MM.YYYY HH:mm'),
     },
     {
-      title: 'Статус',
+      title: t('warehouseRequests.status', 'Статус'),
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => {
@@ -97,7 +97,7 @@ export default function WarehouseRequestsPage() {
       },
     },
     {
-      title: 'Действия',
+      title: t('common.actions', 'Действия'),
       key: 'actions',
       render: (_: any, record: WarehouseOrder) => (
         <Space size="small">
@@ -133,7 +133,7 @@ export default function WarehouseRequestsPage() {
           {t('menu.warehouseRequests')}
         </Title>
         <Text type="secondary">
-          Мониторинг, верификация остатков и утверждение входящих заявок от региональных складов компании.
+          {t('warehouseRequests.subtitle')}
         </Text>
       </Card>
 
@@ -144,7 +144,7 @@ export default function WarehouseRequestsPage() {
         rowKey="id"
         pagination={{ pageSize: 20 }}
         scroll={{ x: 'max-content' }}
-        locale={{ emptyText: 'Нет активных заявок.' }}
+        locale={{ emptyText: t('warehouseRequests.noActive', 'Нет активных заявок.') }}
       />
     </div>
   );

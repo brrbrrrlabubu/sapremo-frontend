@@ -64,13 +64,13 @@ export default function FinancePage() {
   // ─── Колонки таблицы долгов ───────────────────────────────────────────────
   const debtColumns = [
     {
-      title: 'ID Склада',
+      title: t('finance.debtTableWarehouseId', 'ID Склада'),
       dataIndex: 'warehouse_id',
       key: 'warehouse_id',
       render: (id: string) => <Text code style={{ fontSize: 11 }}>{id.substring(0, 8)}…</Text>,
     },
     {
-      title: 'Задолженность',
+      title: t('finance.debtTableAmount', 'Задолженность'),
       dataIndex: 'amount',
       key: 'amount',
       render: (val: string) => (
@@ -80,7 +80,7 @@ export default function FinancePage() {
       ),
     },
     {
-      title: 'Экспорт документов',
+      title: t('finance.debtTableActions', 'Экспорт документов'),
       key: 'actions',
       render: (_: unknown, record: Debt) => (
         <span>
@@ -110,15 +110,15 @@ export default function FinancePage() {
 
   // ─── Колонки вкладки платежей ──────────────────────────────────────────
   const paymentColumns = [
-    { title: 'Метод', dataIndex: "payment_method", key: "payment_method" },
+    { title: t('finance.paymentTableMethod', 'Метод'), dataIndex: "payment_method", key: "payment_method" },
     {
       title: t('finance.amountSom'),
       dataIndex: "amount",
       key: "amount",
       render: (val: string) => <Tag color="green">{val}</Tag>,
     },
-    { title: 'Дата', dataIndex: "paid_at", key: "paid_at", render: (date: string) => new Date(date).toLocaleString() },
-    { title: 'Комментарий', dataIndex: "comment", key: "comment" },
+    { title: t('finance.paymentTableDate', 'Дата'), dataIndex: "paid_at", key: "paid_at", render: (date: string) => new Date(date).toLocaleString() },
+    { title: t('finance.paymentTableComment', 'Комментарий'), dataIndex: "comment", key: "comment" },
   ];
 
   return (
@@ -173,7 +173,7 @@ export default function FinancePage() {
       {error && (
         <Alert
           type="error"
-          message="Ошибка загрузки данных"
+          message={t('finance.errorLoading', 'Ошибка загрузки данных')}
           description={error}
           showIcon
           style={{ marginBottom: 16 }}
@@ -183,11 +183,11 @@ export default function FinancePage() {
       <Tabs items={[
         {
           key: "1",
-          label: "Дебиторская задолженность",
+          label: t('finance.debtTab', 'Дебиторская задолженность'),
           children: isLoading && debts.length === 0
             ? (
               <div style={{ textAlign: 'center', padding: '40px' }}>
-                <Spin size="large" tip="Получение актуального баланса контрагентов..." />
+                <Spin size="large" tip={t('finance.fetchingBalance', 'Получение актуального баланса контрагентов...')} />
               </div>
             )
             : (
@@ -197,7 +197,7 @@ export default function FinancePage() {
                 rowKey="warehouse_id"
                 pagination={{ pageSize: 20 }}
                 scroll={{ x: 'max-content' }}
-                locale={{ emptyText: 'Дебиторская задолженность по складам отсутствует.' }}
+                locale={{ emptyText: t('finance.noDebt', 'Дебиторская задолженность по складам отсутствует.') }}
               />
             ),
         },
@@ -211,7 +211,7 @@ export default function FinancePage() {
               rowKey="id"
               pagination={{ pageSize: 20 }}
               scroll={{ x: 'max-content' }}
-              locale={{ emptyText: 'Нет истории платежей.' }}
+              locale={{ emptyText: t('finance.noPayments', 'Нет истории платежей.') }}
             />
           ),
         },

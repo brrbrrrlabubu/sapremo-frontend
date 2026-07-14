@@ -36,7 +36,7 @@ export default function WarehousePage() {
         const data = Array.isArray(response.data) ? response.data : response.data.results || [];
         setWarehouses(data);
       } catch (error) {
-        notification.error({ message: 'Ошибка загрузки данных о складах' });
+        notification.error({ message: t('warehouses.errorLoading', 'Ошибка загрузки данных о складах') });
       } finally {
         setLoading(false);
       }
@@ -58,7 +58,7 @@ export default function WarehousePage() {
       ),
     },
     {
-      title: 'ID',
+      title: t('warehouses.id', 'ID'),
       key: 'warehouse_id',
       render: (_: any, record: WarehouseStat) => (
         <Text code style={{ fontSize: 11 }}>
@@ -67,7 +67,7 @@ export default function WarehousePage() {
       ),
     },
     {
-      title: 'Общая сумма',
+      title: t('warehouses.totalAmount', 'Общая сумма'),
       key: 'total_amount',
       render: (_: any, record: WarehouseStat) => {
         const val = record.total_amount || record.count || '0';

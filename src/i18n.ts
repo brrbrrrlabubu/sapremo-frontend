@@ -72,7 +72,8 @@ const resources = {
         manager: 'Менеджер склада:',
         email: 'Email:',
         supportDesc: 'Если возникли вопросы по приёмке или расхождениям, свяжитесь с ответственным менеджером.',
-        noData: 'Нет данных'
+        noData: 'Нет данных',
+        truck_number: 'Номер машины',
       },
       shipments: {
         title: 'Отгрузки товара',
@@ -95,7 +96,12 @@ const resources = {
         som: 'сом',
         accept: 'Принять',
         defect: 'Брак',
-        deleteConfirm: 'Удалить?'
+        deleteConfirm: 'Удалить?',
+        truck_number: 'Номер машины',
+        warehouse_id: 'Склад назначения',
+        truck_driver: 'Водитель',
+        pendingTab: 'В ожидании',
+        pending: 'В ожидании'
       },
       warehouses: {
         title: 'Управление складами',
@@ -117,7 +123,22 @@ const resources = {
         enterAddress: 'Укажите адрес',
         addressPlaceholder: 'Улица, номер здания, ориентиры',
         deleteConfirmTitle: 'Удалить склад?',
-        deleteConfirmDesc: 'Вы уверены, что хотите удалить этот склад из базы данных?'
+        deleteConfirmDesc: 'Вы уверены, что хотите удалить этот склад из базы данных?',
+        totalAmount: 'Общая сумма',
+        errorLoading: 'Ошибка загрузки данных о складах',
+        id: 'ID'
+      },
+      warehouseRequests: {
+        subtitle: 'Мониторинг, верификация остатков и утверждение входящих заявок от региональных складов компании.',
+        orderNo: '№ Заявки',
+        senderWarehouse: 'Склад-отправитель',
+        requestItems: 'Позиции запроса',
+        createdAt: 'Дата создания',
+        status: 'Статус',
+        noActive: 'Нет активных заявок.',
+        errorLoading: 'Ошибка при загрузке заявок',
+        statusUpdated: 'Статус заявки обновлен на',
+        errorUpdating: 'Не удалось обновить статус'
       },
       finance: {
         title: 'Финансовая аналитика',
@@ -129,7 +150,18 @@ const resources = {
         report: 'Отчет по складам',
         source: 'Источник',
         amountSom: 'Сумма (сом)',
-        reportPlaceholder: 'Здесь будет детализированный отчет...'
+        reportPlaceholder: 'Здесь будет детализированный отчет...',
+        debtTab: 'Дебиторская задолженность',
+        debtTableWarehouseId: 'ID Склада',
+        debtTableAmount: 'Задолженность',
+        debtTableActions: 'Экспорт документов',
+        paymentTableMethod: 'Метод',
+        paymentTableDate: 'Дата',
+        paymentTableComment: 'Комментарий',
+        errorLoading: 'Ошибка загрузки данных',
+        fetchingBalance: 'Получение актуального баланса контрагентов...',
+        noDebt: 'Дебиторская задолженность по складам отсутствует.',
+        noPayments: 'Нет истории платежей.'
       },
       analytics: {
         title: 'Аналитика и отчетность',
@@ -140,7 +172,9 @@ const resources = {
         inTransit: 'Товаров в пути',
         details: 'Детальный отчет по складам',
         warehouseName: 'Название склада',
-        turnover: 'Оборот'
+        turnover: 'Оборот',
+        errorLoading: 'Ошибка загрузки статистики',
+        noData: 'Нет данных для отображения.'
       },
       reports: {
         title: 'Отчеты',
@@ -153,7 +187,25 @@ const resources = {
         pdfQuarter: 'Сформировать PDF за квартал',
         report1: 'Финансовый отчет за Июнь 2026',
         report2: 'Реестр всех отгрузок (Общий)',
-        report3: 'Аналитика эффективности складов'
+        report3: 'Аналитика эффективности складов',
+        invoices: 'Накладные',
+        id: 'ID',
+        warehouse: 'Склад',
+        amount: 'Сумма',
+        items: 'Позиции',
+        createdAt: 'Дата создания',
+        errorFetch: 'Ошибка загрузки накладных',
+        errorDownload: 'Ошибка при скачивании файла',
+        noInvoices: 'Нет накладных.'
+      },
+      login: {
+        welcome: 'Добро пожаловать в SAPREMO!',
+        error: 'Ошибка авторизации. Проверьте учётные данные.',
+        enterUsername: 'Введите логин!',
+        username: 'Логин',
+        enterPassword: 'Введите пароль!',
+        password: 'Пароль',
+        submit: 'Войти'
       }
     },
   },
@@ -250,7 +302,12 @@ const resources = {
         som: 'KGS',
         accept: 'Accept',
         defect: 'Defect',
-        deleteConfirm: 'Delete?'
+        deleteConfirm: 'Delete?',
+        truck_number: 'Truck No.',
+        warehouse_id: 'Warehouse ID',
+        truck_driver: 'Truck Driver',
+        pendingTab: 'Pending',
+        pending: 'Pending'
       },
       warehouses: {
         title: 'Warehouse Management',
@@ -272,7 +329,22 @@ const resources = {
         enterAddress: 'Enter address',
         addressPlaceholder: 'Street, building number, landmarks',
         deleteConfirmTitle: 'Delete Warehouse?',
-        deleteConfirmDesc: 'Are you sure you want to delete this warehouse from the database?'
+        deleteConfirmDesc: 'Are you sure you want to delete this warehouse from the database?',
+        totalAmount: 'Total Amount',
+        errorLoading: 'Error loading warehouse data',
+        id: 'ID'
+      },
+      warehouseRequests: {
+        subtitle: 'Monitoring, verification of stock balances and approval of incoming requests from regional company warehouses.',
+        orderNo: 'Request No.',
+        senderWarehouse: 'Sender Warehouse',
+        requestItems: 'Requested Items',
+        createdAt: 'Creation Date',
+        status: 'Status',
+        noActive: 'No active requests.',
+        errorLoading: 'Error loading requests',
+        statusUpdated: 'Request status updated to',
+        errorUpdating: 'Failed to update status'
       },
       finance: {
         title: 'Financial Analytics',
@@ -284,7 +356,18 @@ const resources = {
         report: 'Warehouse Report',
         source: 'Source',
         amountSom: 'Amount (KGS)',
-        reportPlaceholder: 'Detailed report will be here...'
+        reportPlaceholder: 'Detailed report will be here...',
+        debtTab: 'Accounts Receivable',
+        debtTableWarehouseId: 'Warehouse ID',
+        debtTableAmount: 'Debt Amount',
+        debtTableActions: 'Export Documents',
+        paymentTableMethod: 'Method',
+        paymentTableDate: 'Date',
+        paymentTableComment: 'Comment',
+        errorLoading: 'Error loading data',
+        fetchingBalance: 'Fetching current counterparty balance...',
+        noDebt: 'No warehouse accounts receivable.',
+        noPayments: 'No payment history.'
       },
       analytics: {
         title: 'Analytics & Reporting',
@@ -295,7 +378,9 @@ const resources = {
         inTransit: 'Items In Transit',
         details: 'Detailed Warehouse Report',
         warehouseName: 'Warehouse Name',
-        turnover: 'Turnover'
+        turnover: 'Turnover',
+        errorLoading: 'Error loading statistics',
+        noData: 'No data to display.'
       },
       reports: {
         title: 'Reports',
@@ -308,7 +393,25 @@ const resources = {
         pdfQuarter: 'Generate Quarterly PDF',
         report1: 'Financial Report June 2026',
         report2: 'Registry of All Shipments (General)',
-        report3: 'Warehouse Efficiency Analytics'
+        report3: 'Warehouse Efficiency Analytics',
+        invoices: 'Waybills',
+        id: 'ID',
+        warehouse: 'Warehouse',
+        amount: 'Amount',
+        items: 'Items',
+        createdAt: 'Creation Date',
+        errorFetch: 'Error loading waybills',
+        errorDownload: 'Error downloading file',
+        noInvoices: 'No waybills.'
+      },
+      login: {
+        welcome: 'Welcome to SAPREMO!',
+        error: 'Authorization error. Please check your credentials.',
+        enterUsername: 'Enter username!',
+        username: 'Username',
+        enterPassword: 'Enter password!',
+        password: 'Password',
+        submit: 'Login'
       }
     },
   },

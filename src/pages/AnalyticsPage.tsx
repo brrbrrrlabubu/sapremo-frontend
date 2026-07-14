@@ -25,15 +25,15 @@ export default function AnalyticsPage() {
       const data = Array.isArray(response.data) ? response.data : response.data.results || [];
       setStats(data);
     } catch (error) {
-      notification.error({ message: 'Ошибка загрузки статистики' });
+      notification.error({ message: t('analytics.errorLoading', 'Ошибка загрузки статистики') });
     } finally {
       setLoading(false);
     }
   };
 
   const columns = [
-    { title: 'Склад', dataIndex: 'warehouse_name', key: 'warehouse_name', render: (val: any, record: any) => val || record.name || 'N/A' },
-    { title: 'Оборот / Значение', dataIndex: 'value', key: 'value', render: (val: any, record: any) => val || record.total_amount || record.count || '0' },
+    { title: t('analytics.warehouseName', 'Название склада'), dataIndex: 'warehouse_name', key: 'warehouse_name', render: (val: any, record: any) => val || record.name || 'N/A' },
+    { title: t('analytics.turnover', 'Оборот / Значение'), dataIndex: 'value', key: 'value', render: (val: any, record: any) => val || record.total_amount || record.count || '0' },
   ];
 
   return (
@@ -66,7 +66,7 @@ export default function AnalyticsPage() {
           rowKey={(record, i) => record.id || record.warehouse_id || String(i)} 
           pagination={false} 
           scroll={{ x: 'max-content' }} 
-          locale={{ emptyText: 'Нет данных для отображения.' }}
+          locale={{ emptyText: t('analytics.noData', 'Нет данных для отображения.') }}
         />
       </Card>
     </div>

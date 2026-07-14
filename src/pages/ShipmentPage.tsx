@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Table, Button, Modal, Form, Input, DatePicker, Tabs, Tag, Typography, Space, Card, Row, Col, App } from "antd";
+import { Table, Button, Modal, Form, Input, Select, DatePicker, Tabs, Tag, Typography, Space, Card, Row, Col, App } from "antd";
 import { PlusOutlined, TruckOutlined, CalendarOutlined, UserOutlined, CheckCircleOutlined, CloseCircleOutlined, PrinterOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 
 import { ShipmentService } from "../services/shipment.service";
+import { axiosClient } from "../api/axiosClient";
 import type { Shipment } from "../types/api.types";
 import { useUIStore } from "../store/useUIStore";
 import { useUserStore } from "../store/useUserStore";
@@ -22,6 +23,7 @@ export default function ShipmentsPage() {
   const { notification } = App.useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [warehouses, setWarehouses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
 
@@ -39,8 +41,19 @@ export default function ShipmentsPage() {
     }
   };
 
+  const fetchWarehouses = async () => {
+    try {
+      const response = await axiosClient.get('/stats/warehouses/');
+      const data = Array.isArray(response.data) ? response.data : response.data.results || [];
+      setWarehouses(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
     fetchShipments();
+    fetchWarehouses();
   }, []);
 
   const handleCreate = async (values: any) => {
@@ -92,7 +105,7 @@ export default function ShipmentsPage() {
 
   const columns = [
     { 
-      title: t('dashboard.truck_number', 'Truck No.'), 
+      title: t('shipments.truck_number', 'Номер машины'), 
       dataIndex: "truck_number", 
       key: "truck_number", 
       render: (text: string) => (
@@ -113,9 +126,9 @@ export default function ShipmentsPage() {
         </Space>
       ) 
     },
-    { title: t('shipments.warehouse_id', 'Warehouse ID'), dataIndex: "warehouse_id", key: "warehouse_id" },
+    { title: t('shipments.warehouse_id', 'Склад назначения'), dataIndex: "warehouse_id", key: "warehouse_id" },
     { 
-      title: t('shipments.truck_driver', 'Truck Driver'), 
+      title: t('shipments.truck_driver', 'Водитель'), 
       dataIndex: "truck_driver", 
       key: "truck_driver", 
       render: (text: string) => (
@@ -131,7 +144,7 @@ export default function ShipmentsPage() {
       render: (status: Shipment["status"]) => {
         const config: any = {
           shipped: { bg: isDark ? "#142518" : "#efffe2", text: isDark ? "#52c41a" : "#52C41A", icon: <CheckCircleOutlined />, label: t('status.shipped') },
-          pending: { bg: isDark ? "#2b2111" : "#fff6da", text: isDark ? "#faad14" : "#FAAD14", icon: <CloseCircleOutlined />, label: t('status.pending', 'Pending') },
+          pending: { bg: isDark ? "#2b2111" : "#fff6da", text: isDark ? "#faad14" : "#FAAD14", icon: <CloseCircleOutlined />, label: t('status.pending', 'Ожидает обработки') },
           cancelled: { bg: isDark ? "#2c1517" : "#ffdfde", text: isDark ? "#ff4d4f" : "#F5222D", icon: <CloseCircleOutlined />, label: t('status.cancelled', 'Cancelled') },
         };
         const current = config[status] || config.pending;
@@ -146,7 +159,7 @@ export default function ShipmentsPage() {
           <Button type="text" icon={<PrinterOutlined style={{ color: isDark ? "rgba(255, 255, 255, 0.65)" : "inherit" }} />} onClick={() => {
             const win = window.open('', '_blank', 'width=800,height=600');
             if (win) {
-              win.document.write(`<html><body><h1>${record.truck_number}</h1><p>${t('shipments.warehouse_id', 'Warehouse ID')}: ${record.warehouse_id}</p><p>${t('shipments.truck_driver', 'Driver')}: ${record.truck_driver}</p><script>window.onload = function() { window.print(); };</script></body></html>`);
+              win.document.write(`<html><body><h1>${record.truck_number}</h1><p>${t('shipments.warehouse_id', 'Склад назначения')}: ${record.warehouse_id}</p><p>${t('shipments.truck_driver', 'Водитель')}: ${record.truck_driver}</p><script>window.onload = function() { window.print(); };</script></body></html>`);
               win.document.close();
             }
           }} />
@@ -193,7 +206,7 @@ export default function ShipmentsPage() {
           </Col>
           <Col xs={24} sm={8}>
             <div style={{ background: isDark ? "#2b2111" : "#fffbe6", padding: "12px", borderRadius: "4px", border: `1px solid ${isDark ? "#4d3e1f" : "#ffe58f"}` }}>
-              <Text type="secondary" style={{ color: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0,0,0,0.45)" }}>{t('shipments.pending', 'Pending')}</Text>
+              <Text type="secondary" style={{ color: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0,0,0,0.45)" }}>{t('shipments.pending', 'В ожидании')}</Text>
               <div style={{ fontSize: "20px", fontWeight: 600, color: "#faad14" }}>{shipments.filter(s => s.status === "pending").length}</div>
             </div>
           </Col>
@@ -208,17 +221,24 @@ export default function ShipmentsPage() {
 
       <Tabs defaultActiveKey="all" items={[
         { key: "all", label: t('shipments.all'), children: renderTable() },
-        { key: "pending", label: t('shipments.pendingTab', 'Pending'), children: renderTable("pending") },
+        { key: "pending", label: t('shipments.pendingTab', 'В ожидании'), children: renderTable("pending") },
         { key: "shipped", label: t('shipments.shippedTab'), children: renderTable("shipped") },
       ]} />
 
       <Modal title={t('shipments.createModalTitle')} open={isModalOpen} onOk={() => form.submit()} onCancel={() => setIsModalOpen(false)} confirmLoading={loading}>
         <Form form={form} layout="vertical" onFinish={handleCreate}>
           <Form.Item name="date" label={t('common.date')} initialValue={dayjs()}><DatePicker style={{ width: "100%" }} /></Form.Item>
-          {/* Typically warehouse id should come from a Warehouse API endpoint, but using string input for now as placeholder for real IDs */}
-          <Form.Item name="warehouse_id" label={t('shipments.warehouse_id', 'Warehouse ID')} rules={[{ required: true }]}><Input placeholder="UUID" /></Form.Item>
-          <Form.Item name="truck_number" label={t('shipments.truck_number', 'Truck Number')} rules={[{ required: true }]}><Input /></Form.Item>
-          <Form.Item name="truck_driver" label={t('shipments.truck_driver', 'Truck Driver')} rules={[{ required: true }]}><Input /></Form.Item>
+          <Form.Item name="warehouse_id" label={t('shipments.warehouse', 'Warehouse')} rules={[{ required: true }]}>
+            <Select placeholder={t('warehouses.typePlaceholder', 'Select from list')}>
+              {warehouses.map((w) => (
+                <Select.Option key={w.id || w.warehouse_id} value={w.id || w.warehouse_id}>
+                  {w.name || w.warehouse_name || w.id || w.warehouse_id}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item name="truck_number" label={t('shipments.truck_number', 'Номер машины')} rules={[{ required: true }]}><Input /></Form.Item>
+          <Form.Item name="truck_driver" label={t('shipments.truck_driver', 'Водитель')} rules={[{ required: true }]}><Input /></Form.Item>
         </Form>
       </Modal>
     </div>

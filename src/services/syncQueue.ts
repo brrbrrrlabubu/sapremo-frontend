@@ -48,11 +48,7 @@ export class SyncQueue {
     // Использование классического цикла for..of для обеспечения строгой очередности (FIFO)
     for (const item of queue) {
       try {
-        await axiosClient.request({
-          url: item.endpoint,
-          method: item.method,
-          data: item.payload,
-        });
+        await axiosClient.post('/sync/push/', item);
         
         // Удаляем успешно синхронизированный элемент из локального стейта
         this.removeItemFromQueue(item.id);
