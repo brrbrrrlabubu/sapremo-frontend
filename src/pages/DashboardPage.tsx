@@ -11,6 +11,8 @@ import { ShipmentService } from '../services/shipment.service';
 import type { Shipment } from '../types/api.types';
 import noDataIcon from '../assets/No-Data.svg';
 import { useTranslation } from 'react-i18next';
+import { useUIStore } from '../store/useUIStore';
+import { PALETTE, themed } from '../theme/tokens';
 
 const { Title, Text } = Typography;
 
@@ -28,6 +30,8 @@ export default function DashboardPage() {
   const { t } = useTranslation();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(false);
+  const { theme } = useUIStore();
+  const tTheme = themed(theme === 'dark');
   const { notification } = App.useApp();
 
   useEffect(() => {
@@ -52,12 +56,12 @@ export default function DashboardPage() {
   const totalAmount = shipments.reduce((sum, s) => sum + parseFloat(s.total_amount || '0'), 0);
 
   const metrics = [
-    { title: t('dashboard.stock'), value: totalAmount.toLocaleString('ru-RU'), suffix: ` ${t('shipments.som')}`, icon: <InboxOutlined style={{ fontSize: '24px', color: '#1890ff' }} />, color: "#e6f7ff", trend: t('dashboard.updating') },
-    { title: t('dashboard.totalShipments'), value: totalShipmentsCount, suffix: ` ${t('dashboard.docs')}`, icon: <TruckOutlined style={{ fontSize: '24px', color: '#52c41a' }} />, color: "#f6ffed", trend: `${t('dashboard.trucksInTransit', 'Pending:')} ${pendingCount}` }
+    { title: t('dashboard.stock'), value: totalAmount.toLocaleString('ru-RU'), suffix: ` ${t('shipments.som')}`, icon: <InboxOutlined style={{ fontSize: '24px', color: PALETTE.primary }} />, color: tTheme.bgPrimary, trend: t('dashboard.updating') },
+    { title: t('dashboard.totalShipments'), value: totalShipmentsCount, suffix: ` ${t('dashboard.docs')}`, icon: <TruckOutlined style={{ fontSize: '24px', color: PALETTE.success }} />, color: tTheme.bgSuccess, trend: `${t('dashboard.trucksInTransit', 'Pending:')} ${pendingCount}` }
   ];
 
   const recentActivityColumns = [
-    { title: t('dashboard.truck_number', 'Truck No.'), dataIndex: 'truck_number', key: 'truck_number', render: (text: string) => <Text strong style={{ color: '#1890ff' }}>{text}</Text> },
+    { title: t('dashboard.truck_number', 'Truck No.'), dataIndex: 'truck_number', key: 'truck_number', render: (text: string) => <Text strong style={{ color: PALETTE.primary }}>{text}</Text> },
     { title: t('dashboard.destWarehouse', 'Warehouse'), dataIndex: 'warehouse_id', key: 'warehouse_id' },
     { title: t('dashboard.status'), dataIndex: 'status', key: 'status', render: (status: string) => {
         const config: Record<string, { color: string, label: string }> = {
@@ -74,7 +78,7 @@ export default function DashboardPage() {
   return (
     <div>
       <Card style={{ marginBottom: 24, borderRadius: "4px" }}>
-        <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px" }}> {t('dashboard.title')}</Title>
+        <Title level={3} style={{ color: PALETTE.primary, margin: 0, fontSize: "20px" }}> {t('dashboard.title')}</Title>
         <Text type="secondary">{t('dashboard.subtitle')}</Text>
       </Card>
 
@@ -88,7 +92,7 @@ export default function DashboardPage() {
               </div>
               <Statistic value={item.value} suffix={item.suffix} valueStyle={{ fontSize: '26px', fontWeight: 'bold' }} />
               <div style={{ marginTop: '8px' }}>
-                <Space><ArrowUpOutlined style={{ color: '#52c41a' }} /><span style={{ color: '#52c41a', fontWeight: 500 }}>{item.trend}</span></Space>
+                <Space><ArrowUpOutlined style={{ color: PALETTE.success }} /><span style={{ color: PALETTE.success, fontWeight: 500 }}>{item.trend}</span></Space>
               </div>
             </Card>
           </Col>

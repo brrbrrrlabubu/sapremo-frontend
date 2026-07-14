@@ -3,6 +3,7 @@ import { Table, Card, Typography, Row, Col, Statistic, Tabs, Tag, Button, Spin, 
 import { RiseOutlined, FallOutlined, BankOutlined, FilePdfOutlined, FileExcelOutlined } from "@ant-design/icons";
 import { useUIStore } from "../store/useUIStore";
 import { useTranslation } from "react-i18next";
+import { PALETTE, themed } from "../theme/tokens";
 import { PaymentService } from "../services/payment.service";
 import { InvoiceService } from "../services/invoice.service";
 import { useApiOperation } from "../hooks/useRequestOperations";
@@ -18,6 +19,7 @@ export default function FinancePage() {
   const { t } = useTranslation();
   const { theme } = useUIStore();
   const isDark = theme === "dark";
+  const tTheme = themed(isDark);
 
   const { isLoading, error } = useApiOperation();
   const [debts, setDebts] = useState<Debt[]>([]);
@@ -125,44 +127,44 @@ export default function FinancePage() {
     <div>
       <Card bordered={true} style={{ marginBottom: 24, borderRadius: "4px" }}>
         <div style={{ marginBottom: 24 }}>
-          <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px", fontWeight: 600 }}>
+          <Title level={3} style={{ color: PALETTE.primary, margin: 0, fontSize: "20px", fontWeight: 600 }}>
             {t('finance.title')}
           </Title>
-          <Text type="secondary" style={{ color: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0, 0, 0, 0.45)" }}>
+          <Text type="secondary" style={{ color: tTheme.textSecondary }}>
             {t('finance.subtitle')}
           </Text>
         </div>
 
         <Row gutter={16}>
           <Col xs={24} sm={8}>
-            <Card size="small" bordered={false} style={{ background: isDark ? "#142518" : "#f6ffed", border: isDark ? "1px solid #1b3d22" : "none" }}>
+            <Card size="small" bordered={false} style={{ background: tTheme.bgSuccess, border: `1px solid ${tTheme.borderSuccess}` }}>
               <Statistic
-                title={<span style={{ color: isDark ? "rgba(255, 255, 255, 0.65)" : "rgba(0, 0, 0, 0.45)" }}>{t('finance.totalRevenue')}</span>}
+                title={<span style={{ color: tTheme.textSecondary }}>{t('finance.totalRevenue')}</span>}
                 value={0}
                 prefix={<RiseOutlined />}
                 suffix={t('shipments.som')}
-                valueStyle={{ color: isDark ? "#52c41a" : "#3f8600" }}
+                valueStyle={{ color: PALETTE.success }}
               />
             </Card>
           </Col>
           <Col xs={24} sm={8}>
-            <Card size="small" bordered={false} style={{ background: isDark ? "#2c1517" : "#fff2f0", border: isDark ? "1px solid #4a1e22" : "none" }}>
+            <Card size="small" bordered={false} style={{ background: tTheme.bgError, border: `1px solid ${tTheme.borderError}` }}>
               <Statistic
-                title={<span style={{ color: isDark ? "rgba(255, 255, 255, 0.65)" : "rgba(0, 0, 0, 0.45)" }}>{t('finance.debt')}</span>}
+                title={<span style={{ color: tTheme.textSecondary }}>{t('finance.debt')}</span>}
                 value={stats.totalDebt}
                 prefix={<FallOutlined />}
                 suffix={t('shipments.som')}
-                valueStyle={{ color: isDark ? "#ff4d4f" : "#cf1322" }}
+                valueStyle={{ color: PALETTE.error }}
               />
             </Card>
           </Col>
           <Col xs={24} sm={8}>
-            <Card size="small" bordered={false} style={{ background: isDark ? "#111a2c" : "#f0f9ff", border: isDark ? "1px solid #152542" : "none" }}>
+            <Card size="small" bordered={false} style={{ background: tTheme.bgPrimary, border: `1px solid ${tTheme.borderPrimary}` }}>
               <Statistic
-                title={<span style={{ color: isDark ? "rgba(255, 255, 255, 0.65)" : "rgba(0, 0, 0, 0.45)" }}>{t('finance.activeShipments')}</span>}
+                title={<span style={{ color: tTheme.textSecondary }}>{t('finance.activeShipments')}</span>}
                 value={stats.debtCount}
                 prefix={<BankOutlined />}
-                valueStyle={{ color: isDark ? "#1890ff" : "inherit" }}
+                valueStyle={{ color: PALETTE.primary }}
               />
             </Card>
           </Col>
@@ -219,7 +221,7 @@ export default function FinancePage() {
           key: "3",
           label: t('finance.report'),
           children: (
-            <div style={{ padding: 20, color: isDark ? "rgba(255, 255, 255, 0.85)" : "inherit" }}>
+            <div style={{ padding: 20, color: tTheme.text }}>
               {t('finance.reportPlaceholder')}
             </div>
           ),

@@ -4,6 +4,7 @@ import { FilePdfOutlined, FileExcelOutlined, BarChartOutlined } from "@ant-desig
 import { useTranslation } from "react-i18next";
 import { InvoiceService } from "../services/invoice.service";
 import type { Invoice } from "../types/api.types";
+import { PALETTE } from "../theme/tokens";
 import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
@@ -112,7 +113,7 @@ export default function ReportsPage() {
   return (
     <div>
       <Card bordered={true} style={{ marginBottom: 24, borderRadius: "4px" }} styles={{ body: { padding: "20px 24px" } }}>
-        <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px" }}>{t('reports.title')}</Title>
+        <Title level={3} style={{ color: PALETTE.primary, margin: 0, fontSize: "20px" }}>{t('reports.title')}</Title>
         <Text type="secondary" style={{ fontSize: "14px", marginTop: 4, display: "block" }}>{t('reports.subtitle')}</Text>
       </Card>
 

@@ -1,12 +1,11 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-
-type Role = 'admin' | 'factory' | 'manager' | 'accountant'
+import type { UserRole } from '../types/enums'
 
 interface User {
   id: string
   name: string
-  role: Role
+  role: UserRole
 }
 
 interface UserStore {
@@ -25,9 +24,8 @@ export const useUserStore = create<UserStore>()(
       // Инициализируем isAuthenticated на основании наличия токена в localStorage при первом рендере
       isAuthenticated: !!localStorage.getItem('access_token'),
       setUser: (user) => set({ user, isAuthenticated: true }),
+      // Только UI-state. Токены чистит AuthService.logout()
       clearUser: () => {
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
         set({ user: null, isAuthenticated: false })
       },
       syncAuthFromStorage: () => {

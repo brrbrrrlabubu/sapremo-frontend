@@ -14,8 +14,10 @@ import { ThemeLangSelector } from "../components/ThemeLangSelector";
 import { useUIStore } from "../store/useUIStore";
 import { useUserStore } from "../store/useUserStore";
 import { AuthService } from "../services/auth.service";
+import { setNavigate } from "../api/axiosClient";
+import { PALETTE, themed } from "../theme/tokens";
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const { Header, Sider, Content } = Layout;
 const { useBreakpoint } = Grid;
@@ -30,7 +32,12 @@ export default function MainLayout() {
   const screens = useBreakpoint();
 
   const isDark = theme === "dark";
+  const tTheme = themed(isDark);
   const isMobile = !screens.md; // < 768px
+
+  useEffect(() => {
+    setNavigate(navigate);
+  }, [navigate]);
 
   const handleLogout = async () => {
     try {
@@ -65,7 +72,7 @@ export default function MainLayout() {
   return (
     <Layout style={{ minHeight: "100vh" }}>
       {/* Боковое меню завода */}
-      <Sider breakpoint="lg" collapsedWidth="0" style={{ background: "#001529" }}>
+      <Sider breakpoint="lg" collapsedWidth="0" style={{ background: tTheme.sidebarNav }}>
         <div style={{ height: 32, margin: "16px", background: "rgba(255, 255, 255, 0.2)", borderRadius: 4, textAlign: "center", color: "#ffffff", lineHeight: "32px", fontWeight: "bold", fontSize: "14px", letterSpacing: "1px" }}>
           {t('common.sapremoFactory')}
         </div>
@@ -89,22 +96,22 @@ export default function MainLayout() {
       {/* Основной контент */}
       <Layout>
         <Header style={{
-          background: isDark ? "#141414" : "#ffffff",
+          background: tTheme.layout,
           padding: isMobile ? "0 8px 0 48px" : "0 24px",
           display: "flex",
           justifyContent: "flex-end",
           alignItems: "center",
           height: "64px",
-          borderBottom: `1px solid ${isDark ? "#303030" : "#f0f0f0"}`,
+          borderBottom: `1px solid ${tTheme.border}`,
           transition: "all 0.3s",
           gap: isMobile ? "6px" : "16px",
           overflow: "hidden",
         }}>
           {/* Индикатор «В сети» — скрыт на мобильных */}
           {!isMobile && (
-            <div onClick={() => setIsOnline(!isOnline)} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", background: isDark ? "#1f1f1f" : "#f5f5f5", padding: "6px 14px", borderRadius: "4px", border: `1px solid ${isDark ? "#303030" : "#e8e8e8"}`, userSelect: "none", transition: "all 0.3s" }}>
-              <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: isOnline ? "#4cd62b" : "#ff4d4f" }} />
-              <span style={{ fontWeight: 500, fontSize: "14px", color: isDark ? "#ffffff" : "#000000" }}>
+            <div onClick={() => setIsOnline(!isOnline)} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", background: tTheme.container, padding: "6px 14px", borderRadius: "4px", border: `1px solid ${tTheme.border}`, userSelect: "none", transition: "all 0.3s" }}>
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: isOnline ? PALETTE.success : PALETTE.error }} />
+              <span style={{ fontWeight: 500, fontSize: "14px", color: tTheme.text }}>
                 {isOnline ? t('common.online') : t('common.offline')}
               </span>
             </div>
@@ -114,9 +121,9 @@ export default function MainLayout() {
 
           {/* Профиль пользователя */}
           <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="bottomRight">
-            <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 8px', borderRadius: '4px', background: isDark ? "#1f1f1f" : "#f5f5f5", border: `1px solid ${isDark ? "#303030" : "#e8e8e8"}`, transition: "all 0.3s" }}>
+            <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 8px', borderRadius: '4px', background: tTheme.container, border: `1px solid ${tTheme.border}`, transition: "all 0.3s" }}>
               <Avatar icon={<UserOutlined />} size="small" />
-              {!isMobile && <span style={{ color: isDark ? "#fff" : "#000", fontWeight: 500 }}>{user?.name || t('common.user', 'User')}</span>}
+              {!isMobile && <span style={{ color: tTheme.text, fontWeight: 500 }}>{user?.name || t('common.user', 'User')}</span>}
             </div>
           </Dropdown>
         </Header>
@@ -124,7 +131,7 @@ export default function MainLayout() {
         <Content style={{
           margin: isMobile ? "8px" : "24px 16px",
           padding: isMobile ? 12 : 24,
-          background: isDark ? "#141414" : "#ffffff",
+          background: tTheme.layout,
           borderRadius: 8,
           minHeight: 280,
           transition: "all 0.3s"

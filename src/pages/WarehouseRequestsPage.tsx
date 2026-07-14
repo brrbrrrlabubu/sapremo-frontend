@@ -6,6 +6,7 @@ import { WarehouseOrderService } from '../services/warehouseOrder.service';
 import type { WarehouseOrder } from '../types/api.types';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
+import { PALETTE } from '../theme/tokens';
 
 const { Title, Text } = Typography;
 
@@ -54,7 +55,7 @@ export default function WarehouseRequestsPage() {
       key: 'id',
       render: (text: string) => (
         <Space>
-          <FileTextOutlined style={{ color: '#1890ff' }} />
+          <FileTextOutlined style={{ color: PALETTE.primary }} />
           <Text strong>{text ? text.substring(0, 8) : 'N/A'}...</Text>
         </Space>
       ),
@@ -69,7 +70,7 @@ export default function WarehouseRequestsPage() {
       title: t('warehouseRequests.requestItems', 'Позиции запроса'),
       dataIndex: 'items',
       key: 'items',
-      render: (items: any[]) => (
+      render: (items: { product_id?: string; productId?: string; qty: number }[]) => (
         <Space direction="vertical" size="small">
           {(items || []).map((item, i) => (
             <Badge 
@@ -129,7 +130,7 @@ export default function WarehouseRequestsPage() {
   return (
     <div>
       <Card style={{ marginBottom: 24, borderRadius: '4px' }}>
-        <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: '20px' }}>
+        <Title level={3} style={{ color: PALETTE.primary, margin: 0, fontSize: '20px' }}>
           {t('menu.warehouseRequests')}
         </Title>
         <Text type="secondary">

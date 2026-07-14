@@ -4,19 +4,12 @@ import { DatabaseOutlined } from "@ant-design/icons";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import { useUIStore } from "../store/useUIStore";
 import { useTranslation } from "react-i18next";
-import { axiosClient } from "../api/axiosClient";
+import { WarehouseService, type WarehouseStat } from "../services/warehouse.service";
+import { PALETTE, themed } from "../theme/tokens";
 
 const { Title, Text } = Typography;
 
-interface WarehouseStat {
-  id?: string;
-  warehouse_id?: string;
-  warehouse_name?: string;
-  name?: string;
-  total_amount?: string;
-  count?: number;
-  [key: string]: any;
-}
+
 
 export default function WarehousePage() {
   const { t } = useTranslation();
@@ -24,6 +17,7 @@ export default function WarehousePage() {
   const { notification } = App.useApp();
   const { theme } = useUIStore();
   const isDark = theme === "dark";
+  const tTheme = themed(isDark);
 
   const [loading, setLoading] = useState<boolean>(true);
   const [warehouses, setWarehouses] = useState<WarehouseStat[]>([]);
@@ -32,8 +26,7 @@ export default function WarehousePage() {
     const fetchWarehouses = async () => {
       try {
         setLoading(true);
-        const response = await axiosClient.get('/stats/warehouses/');
-        const data = Array.isArray(response.data) ? response.data : response.data.results || [];
+        const data = await WarehouseService.getStats();
         setWarehouses(data);
       } catch (error) {
         notification.error({ message: t('warehouses.errorLoading', 'Ошибка загрузки данных о складах') });
@@ -50,8 +43,8 @@ export default function WarehousePage() {
       key: "name",
       render: (_: any, record: WarehouseStat) => (
         <Space>
-          <DatabaseOutlined style={{ color: "#1890ff" }} /> 
-          <strong style={{ color: isDark ? "rgba(255, 255, 255, 0.85)" : "#000000" }}>
+          <DatabaseOutlined style={{ color: PALETTE.primary }} /> 
+          <strong style={{ color: tTheme.text }}>
             {record.warehouse_name || record.name || record.warehouse_id || 'N/A'}
           </strong>
         </Space>
@@ -82,8 +75,8 @@ export default function WarehousePage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px", flex: 1, minWidth: 0 }}>
             <div>
-              <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px", fontWeight: 600 }}>{t('warehouses.title')}</Title>
-              <Text type="secondary" style={{ fontSize: "14px", marginTop: 4, display: "block", color: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0, 0, 0, 0.45)" }}>{t('warehouses.subtitle')}</Text>
+              <Title level={3} style={{ color: PALETTE.primary, margin: 0, fontSize: "20px", fontWeight: 600 }}>{t('warehouses.title')}</Title>
+              <Text type="secondary" style={{ fontSize: "14px", marginTop: 4, display: "block", color: tTheme.textTertiary }}>{t('warehouses.subtitle')}</Text>
             </div>
             <div style={{ width: 40, height: 40, flexShrink: 0 }}>
               <DotLottieReact src="https://lottie.host/embed/8410b0fb-7182-4160-b747-d5d14df21598/E9G9XfRsh2.json" autoplay loop />
@@ -100,7 +93,7 @@ export default function WarehousePage() {
         <Table 
           dataSource={warehouses} 
           columns={columns} 
-          rowKey={(record, i) => record.id || record.warehouse_id || String(i)} 
+          rowKey={(record, i) => record.id || record.warehouse_id || record.name || String(i)} 
           pagination={false} 
           scroll={{ x: 'max-content' }} 
         />

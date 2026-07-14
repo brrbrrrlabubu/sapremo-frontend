@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Mainlayout from "../layouts/Mainlayouts";
+import MainLayout from "../layouts/MainLayout";
+import { UserRole } from "../types/enums";
 import DashboardPage from "../pages/DashboardPage";
 import ShipmentsPage from "../pages/ShipmentPage";
 import WarehousePage from "../pages/WarehousePage";
@@ -13,10 +14,10 @@ import WarehouseRequestsPage from "../pages/WarehouseRequestsPage";
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Mainlayout />,
+    element: <MainLayout />,
     children: [
       {
-        element: <ProtectedRoute allowedRoles={["admin", "manager", "factory", "accountant"]} />,
+        element: <ProtectedRoute allowedRoles={[UserRole.Admin, UserRole.Manager, UserRole.Factory, UserRole.Accountant]} />,
         children: [
           { path: "/", element: <DashboardPage /> },
           { path: "/requests", element: <WarehouseRequestsPage /> },
@@ -34,7 +35,7 @@ const router = createBrowserRouter([
     element: <LoginPage />,
   },
 ], {
-  basename: "/sapremo-frontend", // Вот здесь магия!
+  basename: import.meta.env.BASE_URL,
 });
 
 export default function AppRouter() {

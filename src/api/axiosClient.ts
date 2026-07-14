@@ -1,6 +1,11 @@
 import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 
+// Singleton-навигатор — устанавливается из React-контекста (MainLayout) через setNavigate.
+// Позволяет перенаправлять на /login без полной перезагрузки страницы.
+let _navigate: ((path: string) => void) | null = null;
+export const setNavigate = (fn: (path: string) => void) => { _navigate = fn; };
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://factory-service-ab3j.onrender.com/api/factory';
 
 export const axiosClient: AxiosInstance = axios.create({
@@ -90,8 +95,13 @@ axiosClient.interceptors.response.use(
       processQueue(refreshError, null);
       isRefreshing = false;
       // Принудительный сброс сессии
-      localStorage.clear();
-      window.location.href = '/login';
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      if (_navigate) {
+        _navigate('/login');
+      } else {
+        window.location.href = '/login';
+      }
       return Promise.reject(refreshError);
     }
   }
