@@ -1,152 +1,177 @@
-// src/pages/WarehouseRequestsPage.tsx
-import { useEffect, useState } from 'react';
-import { Table, Button, Card, Typography, Tag, Space, Badge, App } from 'antd';
-import { CheckOutlined, CloseOutlined, FileTextOutlined } from '@ant-design/icons';
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Card, Typography, Table, Tag, Button, Select, Modal, Form, DatePicker, Input, App } from 'antd';
+import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { PALETTE } from '../theme/tokens';
 import { WarehouseOrderService } from '../services/warehouseOrder.service';
 import type { WarehouseOrder } from '../types/api.types';
-import { useTranslation } from 'react-i18next';
-import dayjs from 'dayjs';
-import { PALETTE } from '../theme/tokens';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
+const { TextArea } = Input;
 
 export default function WarehouseRequestsPage() {
   const { t } = useTranslation();
-  const { notification, message } = App.useApp();
-  
-  const [orders, setOrders] = useState<WarehouseOrder[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form] = Form.useForm();
 
-  const fetchOrders = async () => {
+  const { message } = App.useApp();
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  const loadData = async (page: number) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const data = await WarehouseOrderService.getOrders(1, 100);
-      setOrders(data.results);
-    } catch (error) {
-      notification.error({ message: t('warehouseRequests.errorLoading', 'Ошибка при загрузке заявок') });
+      const res = await WarehouseOrderService.getOrders(page, pageSize);
+      setTotal(res.count);
+      
+      const flattenedData: any[] = [];
+      res.results.forEach((order: WarehouseOrder) => {
+        if (order.items && order.items.length > 0) {
+          order.items.forEach(item => {
+            flattenedData.push({
+              id: item.id || Math.random().toString(),
+              orderId: order.id,
+              req: order.id ? order.id.slice(0, 8) : "WREQ-XXX",
+              date: new Date(order.created_at || Date.now()).toLocaleDateString('ru-RU'),
+              product: item.productId || item.product_id ? `Товар ${(item.productId || item.product_id)?.slice(0,8)}` : "—",
+              quantity: item.qty || 0,
+              note: order.comment || "—",
+              status: order.status || "pending",
+            });
+          });
+        } else {
+          flattenedData.push({
+            id: order.id,
+            orderId: order.id,
+            req: order.id ? order.id.slice(0, 8) : "WREQ-XXX",
+            date: new Date(order.created_at || Date.now()).toLocaleDateString('ru-RU'),
+            product: "—",
+            quantity: 0,
+            note: order.comment || "—",
+            status: order.status || "pending",
+          });
+        }
+      });
+      setData(flattenedData);
+    } catch (err) {
+      console.error(err);
+      message.error(t('warehouseRequests.errorLoading'));
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const handleStatusChange = async (record: WarehouseOrder, status: string) => {
-    if (!record.id) return;
-    setActionLoadingId(`${record.id}-${status}`);
-    try {
-      await WarehouseOrderService.updateStatus(record.id, status);
-      message.success(`${t('warehouseRequests.statusUpdated', 'Статус заявки обновлен на')} ${status}`);
-      fetchOrders();
-    } catch (error) {
-      message.error(t('warehouseRequests.errorUpdating', 'Не удалось обновить статус'));
-    } finally {
-      setActionLoadingId(null);
-    }
-  };
+    loadData(currentPage);
+  }, [currentPage]);
 
   const columns = [
-    {
-      title: t('warehouseRequests.orderNo', '№ Заявки'),
-      dataIndex: 'id',
-      key: 'id',
-      render: (text: string) => (
-        <Space>
-          <FileTextOutlined style={{ color: PALETTE.primary }} />
-          <Text strong>{text ? text.substring(0, 8) : 'N/A'}...</Text>
-        </Space>
-      ),
+    { 
+      title: t('warehouseRequests.requestNoCol'), 
+      dataIndex: 'req', 
+      key: 'req',
+      render: (text: string) => <a style={{ color: PALETTE.primary }}>{text}</a>
     },
-    {
-      title: t('warehouseRequests.senderWarehouse', 'Склад-отправитель'),
-      dataIndex: 'warehouse_id',
-      key: 'warehouse_id',
-      render: (id: string) => <Text code>{id ? id.substring(0, 8) : 'N/A'}</Text>,
-    },
-    {
-      title: t('warehouseRequests.requestItems', 'Позиции запроса'),
-      dataIndex: 'items',
-      key: 'items',
-      render: (items: { product_id?: string; productId?: string; qty: number }[]) => (
-        <Space direction="vertical" size="small">
-          {(items || []).map((item, i) => (
-            <Badge 
-              key={i} 
-              status="processing" 
-              text={`${item.product_id ? item.product_id.substring(0, 8) : item.productId} — ${item.qty} шт.`} 
-            />
-          ))}
-        </Space>
-      ),
-    },
-    {
-      title: t('warehouseRequests.createdAt', 'Дата создания'),
-      dataIndex: 'created_at',
-      key: 'created_at',
-      render: (date: string) => dayjs(date).format('DD.MM.YYYY HH:mm'),
-    },
-    {
-      title: t('warehouseRequests.status', 'Статус'),
-      dataIndex: 'status',
+    { title: t('warehouseRequests.dateCol'), dataIndex: 'date', key: 'date' },
+    { title: t('warehouseRequests.productCol'), dataIndex: 'product', key: 'product' },
+    { title: t('warehouseRequests.quantityCol'), dataIndex: 'quantity', key: 'quantity' },
+    { title: t('warehouseRequests.noteCol'), dataIndex: 'note', key: 'note' },
+    { 
+      title: t('warehouseRequests.statusCol'), 
+      dataIndex: 'status', 
       key: 'status',
       render: (status: string) => {
-        const color = status === 'APPROVED' ? 'green' : status === 'REJECTED' ? 'red' : 'orange';
-        return <Tag color={color}>{status}</Tag>;
-      },
+        const s = status?.toLowerCase() || '';
+        const isAccepted = s === 'принято заводом' || s === 'accepted';
+        const isCompleted = s === 'выдано' || s === 'completed';
+        
+        if (isAccepted) {
+          return <Tag color="processing" style={{ borderRadius: '4px', padding: '2px 8px' }}>{status}</Tag>;
+        } else if (isCompleted) {
+          return <Tag color="success" style={{ borderRadius: '4px', padding: '2px 8px' }}>{status}</Tag>;
+        } else if (s === 'отправлено' || s === 'pending') {
+          return <Tag color="warning" style={{ borderRadius: '4px', padding: '2px 8px' }}>{status}</Tag>;
+        }
+        return <Tag style={{ borderRadius: '4px', padding: '2px 8px' }}>{status}</Tag>;
+      }
     },
-    {
-      title: t('common.actions', 'Действия'),
-      key: 'actions',
-      render: (_: any, record: WarehouseOrder) => (
-        <Space size="small">
-          <Button
-            type="primary"
-            icon={<CheckOutlined />}
-            size="small"
-            disabled={record.status !== 'PENDING'}
-            loading={actionLoadingId === `${record.id}-APPROVED`}
-            onClick={() => handleStatusChange(record, 'APPROVED')}
-          >
-            {t('actions.approve')}
-          </Button>
-          <Button
-            danger
-            icon={<CloseOutlined />}
-            size="small"
-            disabled={record.status !== 'PENDING'}
-            loading={actionLoadingId === `${record.id}-REJECTED`}
-            onClick={() => handleStatusChange(record, 'REJECTED')}
-          >
-            {t('actions.reject')}
-          </Button>
-        </Space>
-      ),
+    { 
+      title: t('warehouseRequests.actionCol'), 
+      key: 'action',
+      render: () => (
+        <Button size="small" style={{ borderRadius: '6px', color: '#bfbfbf' }}>{t('warehouseRequests.cancelBtn')}</Button>
+      )
     },
   ];
 
   return (
-    <div>
-      <Card style={{ marginBottom: 24, borderRadius: '4px' }}>
-        <Title level={3} style={{ color: PALETTE.primary, margin: 0, fontSize: '20px' }}>
-          {t('menu.warehouseRequests')}
-        </Title>
-        <Text type="secondary">
-          {t('warehouseRequests.subtitle')}
-        </Text>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Title level={2} style={{ margin: 0, fontSize: "28px", fontWeight: 700 }}>{t('warehouseRequests.title')}</Title>
+          <Select placeholder={t('warehouseRequests.statusFilter')} style={{ width: 120, height: 40 }} />
+        </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <Button icon={<ReloadOutlined />} size="large" style={{ borderRadius: '6px' }} onClick={() => loadData(currentPage)} />
+          <Button type="primary" icon={<PlusOutlined />} size="large" style={{ borderRadius: '6px' }} onClick={() => setIsModalOpen(true)}>{t('warehouseRequests.createRequest')}</Button>
+        </div>
+      </div>
+
+      <Card bordered={false} style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }} styles={{ body: { padding: 0 } }}>
+        <Table 
+          columns={columns} 
+          dataSource={data} 
+          loading={loading}
+          pagination={{
+            current: currentPage,
+            total: total,
+            pageSize: pageSize,
+            showSizeChanger: false,
+            onChange: (page) => setCurrentPage(page),
+            showTotal: (total, range) => `Показано ${range[0]}-${range[1]} из ${total.toLocaleString()}`
+          }} 
+          rowKey="id" 
+          style={{ padding: "24px" }}
+        />
       </Card>
 
-      <Table
-        loading={loading}
-        dataSource={orders}
-        columns={columns}
-        rowKey="id"
-        pagination={{ pageSize: 20 }}
-        scroll={{ x: 'max-content' }}
-        locale={{ emptyText: t('warehouseRequests.noActive', 'Нет активных заявок.') }}
-      />
+      <Modal
+        title={t('warehouseRequests.modalTitle')}
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={[
+          <Button key="back" onClick={() => setIsModalOpen(false)}>
+            {t('common.cancel')}
+          </Button>,
+          <Button key="submit" type="primary" onClick={() => { form.submit(); setIsModalOpen(false); }}>
+            {t('warehouseRequests.submitRequest')}
+          </Button>,
+        ]}
+      >
+        <Form form={form} layout="vertical" style={{ marginTop: 24 }}>
+          <Form.Item label={t('warehouseRequests.dateCol')} name="date" rules={[{ required: true, message: t('common.selectDate') }]}>
+            <DatePicker style={{ width: '100%' }} format="DD.MM.YYYY" />
+          </Form.Item>
+          
+          <Form.Item label={t('warehouseRequests.carLabel')} name="car" rules={[{ required: true, message: t('warehouseRequests.selectCar') }]}>
+            <Select placeholder={t('warehouseRequests.selectCar')}>
+              <Select.Option value="car1">01 KG 123 ABC</Select.Option>
+              <Select.Option value="car2">02 KG 456 DEF</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item label={t('common.quantity')} name="quantity" rules={[{ required: true, message: t('common.enterQuantity') }]}>
+            <Input type="number" />
+          </Form.Item>
+
+          <Form.Item label={t('common.note')} name="note">
+            <TextArea placeholder={t('common.optional')} rows={4} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

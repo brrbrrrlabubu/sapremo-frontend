@@ -38,30 +38,26 @@ export default function App() {
           colorError: PALETTE.error,
           fontSize: 14,
           
-          // Глобальное исправление фонов рабочих областей во всех модулях
           colorBgLayout: tTheme.layout,
-          // Тот самый не ослепляющий цвет для подложек, форм и карточек
-          colorBgContainer: tTheme.container, 
-          
-          // Автоматическая инверсия текста для стопроцентной читаемости
+          colorBgContainer: tTheme.container,
           colorText: tTheme.text,
           colorTextHeading: tTheme.text,
           colorBorder: tTheme.border,
         },
         components: {
-          // Настройка "сайдбар"
           Menu: {
             itemBg: "transparent",
-            itemSelectedBg: tTheme.sidebar, // темнее для темной темы
+            itemSelectedBg: theme === 'dark' ? 'rgba(59, 130, 246, 0.15)' : "#e6f4ff", 
             itemSelectedColor: PALETTE.primary,
-            itemColor: tTheme.text, // адаптивный цвет текста
+            itemColor: tTheme.textSecondary, 
+            itemHoverBg: "transparent",
+            itemHoverColor: PALETTE.primary,
           },
-          // Настройка "таблицы"
           Table: {
-            headerBg: tTheme.container, // адаптивный фон шапки
-            headerColor: tTheme.text,
+            headerBg: tTheme.elevated,
+            headerColor: tTheme.textSecondary,
             headerSplitColor: "transparent",
-            rowHoverBg: tTheme.elevated,
+            rowHoverBg: tTheme.layout,
           },
           // Настройка "вкладки"
           Tabs: {

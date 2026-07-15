@@ -1,3 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ================= LIGHT THEME ================= */
+  /* Backgrounds */
+  --color-bg-layout: #f8fafc;
+  --color-bg-container: #ffffff;
+  --color-bg-elevated: #ffffff;
+  
+  /* Text */
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+  
+  /* Borders */
+  --color-border: #e2e8f0;
+  
+  /* Brand/Accent Colors */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  
+  /* Semantic Colors (Softened) */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #0ea5e9;
+}
+
+[data-theme="dark"], .dark {
+  /* ================= DARK THEME ================= */
+  /* Backgrounds: Deep slate/zinc, no pure black */
+  --color-bg-layout: #0b0f19;
+  --color-bg-container: #1e293b;
+  --color-bg-elevated: #334155;
+  
+  /* Text: Off-white and muted gray, no pure white */
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  
+  /* Borders: Muted slate */
+  --color-border: #334155;
+  
+  /* Brand/Accent Colors (Desaturated to prevent vibrating) */
+  --color-primary: #3b82f6; 
+  --color-primary-hover: #60a5fa;
+  
+  /* Semantic Colors (Softened & accessible) */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #38bdf8;
+}
+
 html, body, #root {
   margin: 0;
   padding: 0;
@@ -9,7 +63,8 @@ html, body, #root {
  
 body { 
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #f5f5f5;
+  background-color: var(--color-bg-layout);
+  color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -53,4 +108,51 @@ body {
   .ant-row {
     row-gap: 8px !important;
   }
+}
+
+/* Custom Tag / Badge Styling */
+.ant-tag {
+  border-radius: 9999px !important; /* Full pill shape */
+  padding: 4px 12px !important;
+  border: none !important;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+/* Light Theme Badges */
+.ant-tag-success {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+  color: #059669 !important;
+}
+.ant-tag-warning {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+  color: #d97706 !important;
+}
+.ant-tag-error {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  color: #dc2626 !important;
+}
+.ant-tag-processing,
+.ant-tag-blue {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  color: #2563eb !important;
+}
+
+/* Dark Theme Badges (Premium Semi-transparent) */
+[data-theme="dark"] .ant-tag-success {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #10b981 !important;
+}
+[data-theme="dark"] .ant-tag-warning {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  color: #f59e0b !important;
+}
+[data-theme="dark"] .ant-tag-error {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important;
+}
+[data-theme="dark"] .ant-tag-processing,
+[data-theme="dark"] .ant-tag-blue {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+  color: #3b82f6 !important;
 }

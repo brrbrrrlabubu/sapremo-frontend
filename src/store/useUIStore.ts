@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import i18n from '../i18n';
 
 type ThemeMode = 'light' | 'dark';
 type LangMode = 'ru' | 'en';
@@ -16,8 +17,15 @@ export const useUIStore = create<UIState>()(
     (set) => ({
       theme: 'dark', // По умолчанию ставим темную тему
       lang: 'ru',
-      toggleTheme: () => set((state) => ({ theme: state.theme === 'light' ? 'dark' : 'light' })),
-      setLang: (lang) => set({ lang }),
+      toggleTheme: () => set((state) => {
+        const newTheme = state.theme === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        return { theme: newTheme };
+      }),
+      setLang: (lang) => {
+        i18n.changeLanguage(lang);
+        set({ lang });
+      },
     }),
     {
       name: 'sapremo-ui-settings', // Ключ в localStorage
