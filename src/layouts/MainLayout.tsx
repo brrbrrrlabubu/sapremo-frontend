@@ -1,4 +1,5 @@
 import { Layout, Menu, Grid, Dropdown, Input } from "antd";
+import { UserRole } from "../types/enums";
 import { useTranslation } from 'react-i18next';
 import {
   DashboardOutlined,
@@ -72,16 +73,16 @@ export default function MainLayout() {
     }
   ];
 
+  const isFactoryOrAdmin = user?.role === UserRole.Admin || user?.role === UserRole.Factory;
+
   const menuItems = [
     { key: "/", icon: <DashboardOutlined />, label: <Link to="/">{t('menu.dashboard')}</Link> },
     { key: "/warehouses", icon: <ShoppingOutlined />, label: <Link to="/warehouses">{t('menu.products')}</Link> },
     { key: "/drivers", icon: <CarOutlined />, label: <Link to="/drivers">{t('menu.drivers')}</Link> },
     { key: "/driver-requests", icon: <FileTextOutlined />, label: <Link to="/driver-requests">{t('menu.driverRequests')}</Link> },
     { key: "/requests", icon: <FileTextOutlined />, label: <Link to="/requests">{t('menu.requests')}</Link> },
-    { key: "/receiving", icon: <ImportOutlined />, label: <Link to="/receiving">{t('menu.receiving')}</Link> },
-    { key: "/shipments", icon: <ExportOutlined />, label: <Link to="/shipments">{t('menu.shipments')}</Link> },
+    ...(isFactoryOrAdmin ? [{ key: "/factory", icon: <ImportOutlined />, label: <Link to="/factory">{t('menu.factory', 'Завод')}</Link> }] : []),
     { key: "/finance", icon: <WalletOutlined />, label: <Link to="/finance">{t('menu.finance')}</Link> },
-    { key: "/returns", icon: <UndoOutlined />, label: <Link to="/returns">{t('menu.returns')}</Link> },
     { key: "/reports", icon: <BarChartOutlined />, label: <Link to="/reports">{t('menu.reports')}</Link> },
   ];
 

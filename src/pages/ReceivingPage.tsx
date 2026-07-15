@@ -94,16 +94,18 @@ export default function ReceivingPage() {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Title level={2} style={{ margin: 0, fontSize: "28px", fontWeight: 700 }}>{t('receiving.title')}</Title>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <Button icon={<ReloadOutlined />} size="large" style={{ borderRadius: '6px' }} onClick={() => loadData(currentPage)} />
-          <Button type="primary" icon={<PlusOutlined />} size="large" style={{ borderRadius: '6px' }} onClick={() => setIsModalOpen(true)}>{t('receiving.newReception')}</Button>
-        </div>
-      </div>
-
-      <Card bordered={false} style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }} styles={{ body: { padding: 0 } }}>
+    <>
+      <Card 
+        bordered={false} 
+        style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }} 
+        styles={{ body: { padding: 0 }, header: { borderBottom: 'none', padding: '16px 24px 0' } }}
+        extra={
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Button icon={<ReloadOutlined />} onClick={() => loadData(currentPage)} />
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>{t('receiving.newReception')}</Button>
+          </div>
+        }
+      >
         <Table 
           columns={columns} 
           dataSource={data} 
@@ -117,7 +119,7 @@ export default function ReceivingPage() {
             showTotal: (total, range) => `Показано ${range[0]}-${range[1]} из ${total.toLocaleString()}`
           }} 
           rowKey="id" 
-          style={{ padding: "24px" }}
+          style={{ padding: "0 24px 24px 24px" }}
         />
       </Card>
 
@@ -155,6 +157,6 @@ export default function ReceivingPage() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </>
   );
 }
