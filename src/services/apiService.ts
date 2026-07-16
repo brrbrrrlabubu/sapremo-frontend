@@ -9,6 +9,13 @@ export const apiClient = axios.create({
         'Content-Type': 'application/json',
     },
 })
+apiClient.interceptors.request.use((config) => {
+    const accessToken = localStorage.getItem('access_token');
+    if (accessToken) {
+        config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+    return config;
+});
 
 export const api = {
     get: <T>(endpoint: string, schema?: z.ZodType<T>) =>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Card, Form, Input, Button, Typography, App, Select } from "antd";
-import { LockOutlined, UserOutlined, SolutionOutlined } from "@ant-design/icons";
+import { Card, Form, Input, Button, Typography, App } from "antd";
+import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { useUserStore } from "../store/useUserStore";
 import { AuthService } from "../services/auth.service";
 import { useTranslation } from "react-i18next";
@@ -18,12 +18,11 @@ export default function LoginPage() {
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? '/';
 
-  // Обновили типы значений формы
-  const onFinish = async (values: { username: string; password: string; role: string }) => {
+  const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true);
     try {
-      // Передаем роль в сервис
-      const loginData = await AuthService.login(values.username, values.password, values.role);
+      // Вызываем логин без передачи роли
+      const loginData = await AuthService.login(values.username, values.password);
 
       syncAuthFromStorage();
 
@@ -52,18 +51,13 @@ export default function LoginPage() {
             <Input prefix={<UserOutlined />} placeholder={t('login.username', "Логин")} />
           </Form.Item>
           
-          <Form.Item name="role" rules={[{ required: true, message: "Выберите роль!" }]}>
-            <Select placeholder="Выберите роль" suffixIcon={<SolutionOutlined />}>
-              <Select.Option value="admin">Админ</Select.Option>
-              <Select.Option value="manager">Менеджер</Select.Option>
-            </Select>
-          </Form.Item>
-
           <Form.Item name="password" rules={[{ required: true, message: t('login.enterPassword', "Введите пароль!") }]}>
             <Input.Password prefix={<LockOutlined />} placeholder={t('login.password', "Пароль")} />
           </Form.Item>
           
-          <Button type="primary" htmlType="submit" loading={loading} block>{t('login.submit', "Войти")}</Button>
+          <Button type="primary" htmlType="submit" loading={loading} block>
+            {t('login.submit', "Войти")}
+          </Button>
         </Form>
       </Card>
     </div>
