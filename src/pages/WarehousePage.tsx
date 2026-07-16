@@ -1,110 +1,114 @@
-import { useEffect, useState } from "react";
-import { Table, Skeleton, Empty, Space, Typography, Card, App } from "antd";
-import { DatabaseOutlined } from "@ant-design/icons";
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import { useUIStore } from "../store/useUIStore";
-import { useTranslation } from "react-i18next";
-import { axiosClient } from "../api/axiosClient";
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Card, Table, Tag, Button, Select, Pagination, Spin, Typography, App } from 'antd';
+import { 
+  ExclamationCircleFilled,
+  LoadingOutlined
+} from '@ant-design/icons';
+import emptyIllustration from '../assets/Empty Products Illustration.png';
+
+import { ProductService } from '../services/product.service';
+import type { Product } from '../types/api.types';
 
 const { Title, Text } = Typography;
 
-interface WarehouseStat {
-  id?: string;
-  warehouse_id?: string;
-  warehouse_name?: string;
-  name?: string;
-  total_amount?: string;
-  count?: number;
-  [key: string]: any;
-}
-
 export default function WarehousePage() {
   const { t } = useTranslation();
-  const { notification } = App.useApp();
-  const { theme } = useUIStore();
-  const isDark = theme === "dark";
+  const [appState, setAppState] = useState<'loading' | 'empty' | 'error' | 'success'>('loading');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [total, setTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+  const { message } = App.useApp();
 
-  const [loading, setLoading] = useState<boolean>(true);
-  const [warehouses, setWarehouses] = useState<WarehouseStat[]>([]);
+  const loadData = async (page: number) => {
+    setAppState('loading');
+    try {
+      const res = await ProductService.getProducts(page, pageSize);
+      setProducts(res.results);
+      setTotal(res.count);
+      setAppState(res.results.length > 0 ? 'success' : 'empty');
+    } catch (error) {
+      console.error(error);
+      setAppState('error');
+      message.error(t('warehouse.errorLoading'));
+    }
+  };
 
   useEffect(() => {
-    const fetchWarehouses = async () => {
-      try {
-        setLoading(true);
-        const response = await axiosClient.get('/stats/warehouses/');
-        const data = Array.isArray(response.data) ? response.data : response.data.results || [];
-        setWarehouses(data);
-      } catch (error) {
-        notification.error({ message: t('errors.fetchFailed', 'Ошибка загрузки данных о складах') });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchWarehouses();
-  }, [notification, t]);
+    loadData(currentPage);
+  }, [currentPage]);
 
   const columns = [
-    {
-      title: t('warehouses.name'),
-      key: "name",
-      render: (_: any, record: WarehouseStat) => (
-        <Space>
-          <DatabaseOutlined style={{ color: "#1890ff" }} /> 
-          <strong style={{ color: isDark ? "rgba(255, 255, 255, 0.85)" : "#000000" }}>
-            {record.warehouse_name || record.name || record.warehouse_id || 'N/A'}
-          </strong>
-        </Space>
-      ),
+    { title: t('warehouse.barcodeCol'), dataIndex: 'barcode', key: 'barcode' },
+    { title: t('warehouse.productCol'), dataIndex: 'name', key: 'name' },
+    { 
+      title: t('warehouse.inBoxCol'), 
+      dataIndex: 'pieces_per_box', 
+      key: 'pieces_per_box', 
+      render: (text: number) => `${text} ${t('common.pcs')}` 
     },
-    {
-      title: 'ID',
-      key: 'warehouse_id',
-      render: (_: any, record: WarehouseStat) => (
-        <Text code style={{ fontSize: 11, color: isDark ? "rgba(255, 255, 255, 0.65)" : "inherit" }}>
-          {(record.warehouse_id || record.id || '').toString().substring(0, 8)}…
-        </Text>
-      ),
-    },
-    {
-      title: t('warehouses.totalAmount'),
-      key: 'total_amount',
-      render: (_: any, record: WarehouseStat) => (
-        <Text strong style={{ color: "#1890ff" }}>
-          {record.total_amount || record.count || '0'}
-        </Text>
-      ),
+    { title: t('warehouse.factoryPriceCol'), dataIndex: 'factory_price', key: 'factory_price', render: (val: string) => `${val} с` },
+    { title: t('warehouse.dispatchPriceCol'), dataIndex: 'dispatch_price', key: 'dispatch_price', render: (val: string) => `${val} с` },
+    { 
+      title: t('warehouse.statusCol'), 
+      dataIndex: 'status', 
+      key: 'status',
+      render: (status: string) => {
+        const s = status?.toLowerCase() || '';
+        let color = 'default';
+        let label = status || t('statuses.unknown');
+
+        if (s === 'active' || s === 'норма') { color = 'success'; label = t('statuses.active'); }
+        else if (s === 'low_stock' || s === 'низкий') { color = 'warning'; label = t('statuses.low_stock'); }
+        else if (s === 'no_stock' || s === 'критический') { color = 'error'; label = t('statuses.no_stock'); }
+
+        return <Tag color={color} style={{ borderRadius: '4px' }}>{label}</Tag>;
+      }
     },
   ];
 
-  return (
-    <div>
-      <Card bordered={true} style={{ marginBottom: 24, borderRadius: "4px" }} styles={{ body: { padding: "16px 24px" } }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
-          <div>
-            <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px" }}>{t('warehouses.title')}</Title>
-            <Text type="secondary" style={{ color: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0, 0, 0, 0.45)" }}>
-              {t('warehouses.subtitle')}
-            </Text>
-          </div>
-          <div style={{ width: 40, height: 40 }}>
-            <DotLottieReact src="https://lottie.host/embed/8410b0fb-7182-4160-b747-d5d14df21598/E9G9XfRsh2.json" autoplay loop />
-          </div>
-        </div>
-      </Card>
+  if (appState === 'error') {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <Card style={{ width: 400, textAlign: 'center' }}>
+          <ExclamationCircleFilled style={{ fontSize: 32, color: '#ff4d4f', marginBottom: 16 }} />
+          <Title level={4}>{t('warehouse.errorTitle')}</Title>
+          <Button type="primary" onClick={() => loadData(currentPage)}>{t('warehouse.retry')}</Button>
+        </Card>
+      </div>
+    );
+  }
 
-      {loading ? (
-        <Skeleton active paragraph={{ rows: 5 }} />
-      ) : warehouses.length === 0 ? (
-        <Empty description={t('warehouses.noData')} />
-      ) : (
-        <Table 
-          dataSource={warehouses} 
-          columns={columns} 
-          rowKey={(record, i) => record.id || record.warehouse_id || String(i)} 
-          pagination={false} 
-          scroll={{ x: 'max-content' }} 
-        />
-      )}
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <Title level={2} style={{ margin: 0, fontSize: "28px" }}>{t('warehouse.title')}</Title>
+        </div>
+        <Select defaultValue="all" style={{ width: 120 }} options={[{ value: 'all', label: t('common.all') }]} />
+      </div>
+
+      <Card bordered={false} style={{ borderRadius: '8px' }} styles={{ body: { padding: 0 } }}>
+        {appState === 'loading' ? (
+          <div style={{ minHeight: '400px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
+          </div>
+        ) : appState === 'empty' ? (
+            <div style={{ textAlign: 'center', padding: '64px' }}>
+                <img src={emptyIllustration} alt="Empty" style={{ width: 140, marginBottom: 24 }} />
+                <Title level={4}>{t('warehouse.emptyTitle')}</Title>
+            </div>
+        ) : (
+          <>
+            <Table columns={columns} dataSource={products} pagination={false} rowKey="id" />
+            <div style={{ padding: "16px 24px", display: 'flex', justifyContent: 'space-between' }}>
+              <Text type="secondary">{t('common.showing')} {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, total)}</Text>
+              <Pagination current={currentPage} total={total} pageSize={pageSize} onChange={setCurrentPage} />
+            </div>
+          </>
+        )}
+      </Card>
     </div>
   );
 }

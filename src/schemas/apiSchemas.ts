@@ -70,10 +70,10 @@ export const DeliveryItemSchema = z.object({
 
 export const ReceptionSchema = z.object({
   id: z.string().uuid().optional(),
-  shipment_id: z.string().optional(),
-  shipment_number: z.string().optional(),
+  shipment_id: z.string().nullable().optional(),
+  shipment_number: z.string().nullable().optional(),
   warehouse_id: z.string().uuid(),
-  warehouse_name: z.string().optional(),
+  warehouse_name: z.string().nullable().optional(),
   delivery_number: z.string(),
   delivered_at: z.string(),
   status: z.string(), // API: enum ['pending','arrived','partial','completed']

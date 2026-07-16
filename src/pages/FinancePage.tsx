@@ -1,230 +1,286 @@
-import { useEffect, useState } from "react";
-import { Table, Card, Typography, Row, Col, Statistic, Tabs, Tag, Button, Spin, Alert } from "antd";
-import { RiseOutlined, FallOutlined, BankOutlined, FilePdfOutlined, FileExcelOutlined } from "@ant-design/icons";
-import { useUIStore } from "../store/useUIStore";
-import { useTranslation } from "react-i18next";
-import { PaymentService } from "../services/payment.service";
-import { InvoiceService } from "../services/invoice.service";
-import { useApiOperation } from "../hooks/useRequestOperations";
-import { DebtSchema } from "../schemas/apiSchemas";
-import { z } from "zod";
-import type { Payment } from "../types/api.types";
+import { useState, useEffect } from 'react';
+import { Row, Col, Card, Typography, Table, Tag, Button, Select, Tabs, DatePicker, Modal, Form, Input, App } from 'antd';
+import { useTranslation } from 'react-i18next';
+import { 
+  PlusOutlined,
+  ArrowUpOutlined
+} from '@ant-design/icons';
+import { PALETTE } from '../theme/tokens';
+import { PaymentService } from '../services/payment.service';
+import type { Payment } from '../types/api.types';
 
 const { Title, Text } = Typography;
+const { RangePicker } = DatePicker;
+const { TextArea } = Input;
 
-type Debt = z.infer<typeof DebtSchema>;
-
-export default function FinancePage() {
+function WarehouseFinance() {
+  const [activeTab, setActiveTab] = useState('income');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form] = Form.useForm();
   const { t } = useTranslation();
-  const { theme } = useUIStore();
-  const isDark = theme === "dark";
 
-  const { isLoading, error } = useApiOperation();
-  const [debts, setDebts] = useState<Debt[]>([]);
+  const isExpense = activeTab === 'expense';
+
+  const { message } = App.useApp();
+  const [loading, setLoading] = useState(false);
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [total, setTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
-  // ─── Загрузка дебиторской задолженности и платежей ──────────────────
-  useEffect(() => {
-    const fetchDebtsAndPayments = async () => {
-      try {
-        const [debtsData, paymentsData] = await Promise.all([
-          PaymentService.getAllDebts(),
-          PaymentService.getPayments(1, 100)
-        ]);
-        if (debtsData) setDebts(debtsData);
-        if (paymentsData && paymentsData.results) setPayments(paymentsData.results);
-      } catch {
-        // Ошибка обрабатывается или логируется
-      }
-    };
-    fetchDebtsAndPayments();
-  }, []);
+  const [totalDebt, setTotalDebt] = useState<number>(0);
 
-  // ─── Скачивание накладной по ID склада-должника ───────────────────────────
-  const handleDownload = async (warehouseId: string, format: 'pdf' | 'excel') => {
-    setDownloadingId(`${warehouseId}-${format}`);
+  const loadData = async (page: number) => {
+    setLoading(true);
     try {
-      await InvoiceService.downloadInvoice(warehouseId, format);
-    } catch {
-      // InvoiceService сам создаёт blob и инициирует скачивание — ошибка логируется в консоль
+      const res = await PaymentService.getPayments(page, pageSize);
+      setPayments(res.results);
+      setTotal(res.count);
+      
+      const debts = await PaymentService.getAllDebts();
+      const sum = debts.reduce((acc, d) => acc + parseFloat(d.amount || '0'), 0);
+      setTotalDebt(sum);
+    } catch (err) {
+      console.error(err);
+      message.error(t('finance.errorLoading'));
     } finally {
-      setDownloadingId(null);
+      setLoading(false);
     }
   };
 
-  // ─── Агрегированные итоги по всем долгам ─────────────────────────────────
-  const totalDebt = debts.reduce((sum, d) => sum + parseFloat(d.amount || '0'), 0);
+  useEffect(() => {
+    loadData(currentPage);
+  }, [currentPage]);
 
-  const stats = {
-    debtCount: debts.length,
-    totalDebt: totalDebt.toLocaleString('ru-RU', { maximumFractionDigits: 2 }),
-  };
+  const incomeData = payments
+    .filter(p => parseFloat(p.amount) >= 0)
+    .map(p => ({
+      id: p.id,
+      date: new Date(p.operation_time || p.paid_at || p.created_at || Date.now()).toLocaleDateString('ru-RU'),
+      amount: `+${parseFloat(p.amount).toLocaleString()} ${t('common.som')}`,
+      paymentType: p.payment_method || t('finance.cash'),
+      driver: p.client_id ? `Клиент ${p.client_id.slice(0, 8)}` : "—",
+      note: p.comment || "—",
+    }));
 
-  // ─── Колонки таблицы долгов ───────────────────────────────────────────────
-  const debtColumns = [
-    {
-      title: 'ID Склада',
-      dataIndex: 'warehouse_id',
-      key: 'warehouse_id',
-      render: (id: string) => <Text code style={{ fontSize: 11 }}>{id.substring(0, 8)}…</Text>,
-    },
-    {
-      title: 'Задолженность',
-      dataIndex: 'amount',
-      key: 'amount',
-      render: (val: string) => (
-        <Tag color="volcano" style={{ fontWeight: 'bold', fontSize: 13 }}>
-          {parseFloat(val || '0').toLocaleString('ru-RU')} сом
-        </Tag>
-      ),
-    },
-    {
-      title: 'Экспорт документов',
-      key: 'actions',
-      render: (_: unknown, record: Debt) => (
-        <span>
-          <Button
-            type="link"
-            icon={<FilePdfOutlined />}
-            size="small"
-            loading={downloadingId === `${record.warehouse_id}-pdf`}
-            onClick={() => handleDownload(record.warehouse_id, 'pdf')}
-            style={{ marginRight: 4 }}
-          >
-            PDF
-          </Button>
-          <Button
-            type="link"
-            icon={<FileExcelOutlined />}
-            size="small"
-            loading={downloadingId === `${record.warehouse_id}-excel`}
-            onClick={() => handleDownload(record.warehouse_id, 'excel')}
-          >
-            Excel
-          </Button>
-        </span>
-      ),
-    },
+  const expenseData = payments
+    .filter(p => parseFloat(p.amount) < 0)
+    .map(p => ({
+      id: p.id,
+      date: new Date(p.operation_time || p.paid_at || p.created_at || Date.now()).toLocaleDateString('ru-RU'),
+      amount: `${parseFloat(p.amount).toLocaleString()} ${t('common.som')}`,
+      paymentType: p.payment_method || t('finance.cash'),
+      recipient: p.client_id ? `Клиент ${p.client_id.slice(0, 8)}` : "—",
+      note: p.comment || "—",
+    }));
+
+  const balances = [
+    { title: t('finance.currentDebt'), value: `${totalDebt.toLocaleString()} ${t('common.som')}`, color: PALETTE.error },
+    { title: t('finance.totalTransactions'), value: `${total}`, color: PALETTE.primary, icon: <ArrowUpOutlined /> },
   ];
 
-  // ─── Колонки вкладки платежей ──────────────────────────────────────────
-  const paymentColumns = [
-    { title: 'Метод', dataIndex: "payment_method", key: "payment_method" },
-    {
-      title: t('finance.amountSom'),
-      dataIndex: "amount",
-      key: "amount",
-      render: (val: string) => <Tag color="green">{val}</Tag>,
+  const incomeColumns = [
+    { title: t('finance.dateCol'), dataIndex: 'date', key: 'date' },
+    { 
+      title: t('finance.amountCol'), 
+      dataIndex: 'amount', 
+      key: 'amount',
+      render: (text: string) => <span style={{ color: PALETTE.success, fontWeight: 600 }}>{text}</span>
     },
-    { title: 'Дата', dataIndex: "paid_at", key: "paid_at", render: (date: string) => new Date(date).toLocaleString() },
-    { title: 'Комментарий', dataIndex: "comment", key: "comment" },
+    { 
+      title: t('finance.paymentTypeCol'), 
+      dataIndex: 'paymentType', 
+      key: 'paymentType',
+      render: (type: string) => {
+        const isCash = type === t('finance.cash') || type === 'Наличный';
+        return (
+          <Tag color={isCash ? 'success' : 'processing'} style={{ borderRadius: '4px' }}>
+            {type}
+          </Tag>
+        );
+      }
+    },
+    { title: t('finance.driverCol'), dataIndex: 'driver', key: 'driver' },
+    { title: t('finance.noteCol'), dataIndex: 'note', key: 'note' },
+  ];
+
+  const expenseColumns = [
+    { title: t('finance.dateCol'), dataIndex: 'date', key: 'date' },
+    { 
+      title: t('finance.amountCol'), 
+      dataIndex: 'amount', 
+      key: 'amount',
+      render: (text: string) => <span style={{ color: PALETTE.error, fontWeight: 600 }}>{text}</span>
+    },
+    { 
+      title: t('finance.paymentTypeCol'), 
+      dataIndex: 'paymentType', 
+      key: 'paymentType',
+      render: (type: string) => {
+        const isCash = type === t('finance.cash') || type === 'Наличный';
+        return (
+          <Tag style={{ color: isCash ? '#52c41a' : '#1890ff', background: isCash ? '#f6ffed' : '#e6f4ff', borderColor: 'transparent', borderRadius: '4px' }}>
+            {type}
+          </Tag>
+        );
+      }
+    },
+    { 
+      title: t('finance.recipientCol'), 
+      dataIndex: 'recipient', 
+      key: 'recipient',
+      render: (text: string) => (
+        <span style={{ background: 'var(--color-bg-layout, #f5f5f5)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', color: 'var(--color-text-secondary, #595959)' }}>
+          {text}
+        </span>
+      )
+    },
+    { title: t('finance.noteCol'), dataIndex: 'note', key: 'note' },
+  ];
+
+  const tabItems = [
+    { key: 'income', label: t('finance.incomeTab') },
+    { key: 'expense', label: t('finance.expenseTab') },
   ];
 
   return (
-    <div>
-      <Card bordered={true} style={{ marginBottom: 24, borderRadius: "4px" }}>
-        <div style={{ marginBottom: 24 }}>
-          <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px", fontWeight: 600 }}>
-            {t('finance.title')}
-          </Title>
-          <Text type="secondary" style={{ color: isDark ? "rgba(255, 255, 255, 0.45)" : "rgba(0, 0, 0, 0.45)" }}>
-            {t('finance.subtitle')}
-          </Text>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <Title level={2} style={{ margin: 0, fontSize: "28px", fontWeight: 700 }}>{t('finance.title')}</Title>
+
+      <Row gutter={[16, 16]}>
+        {balances.map((item, index) => (
+          <Col xs={24} md={8} key={index}>
+            <Card bordered={false} style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
+              <Text type="secondary" style={{ fontSize: "14px", display: "block", marginBottom: "8px" }}>{item.title}</Text>
+              <div style={{ color: item.color, fontSize: "24px", fontWeight: 700, display: "flex", alignItems: "center", gap: "8px" }}>
+                {item.icon}
+                {item.value}
+              </div>
+            </Card>
+          </Col>
+        ))}
+      </Row>
+
+      <Card bordered={false} style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }} styles={{ body: { padding: 0 } }}>
+        <div style={{ padding: "16px 24px 0 24px" }}>
+          <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} />
+        </div>
+        
+        <div style={{ padding: "0 24px 24px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", marginBottom: "16px" }}>
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <RangePicker style={{ borderRadius: "6px" }} placeholder={[t('finance.startDate'), t('finance.endDate')]} />
+            <Select placeholder={t('finance.paymentTypeFilter')} style={{ width: 150, borderRadius: "6px" }} />
+          </div>
+          <Button 
+            type="primary" 
+            danger={isExpense} 
+            icon={<PlusOutlined />} 
+            style={{ borderRadius: "6px" }}
+            onClick={() => setIsModalOpen(true)}
+          >
+            {isExpense ? t('finance.newExpense') : t('finance.newIncome')}
+          </Button>
         </div>
 
-        <Row gutter={16}>
-          <Col xs={24} sm={8}>
-            <Card size="small" bordered={false} style={{ background: isDark ? "#142518" : "#f6ffed", border: isDark ? "1px solid #1b3d22" : "none" }}>
-              <Statistic
-                title={<span style={{ color: isDark ? "rgba(255, 255, 255, 0.65)" : "rgba(0, 0, 0, 0.45)" }}>{t('finance.totalRevenue')}</span>}
-                value={0}
-                prefix={<RiseOutlined />}
-                suffix={t('shipments.som')}
-                valueStyle={{ color: isDark ? "#52c41a" : "#3f8600" }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={8}>
-            <Card size="small" bordered={false} style={{ background: isDark ? "#2c1517" : "#fff2f0", border: isDark ? "1px solid #4a1e22" : "none" }}>
-              <Statistic
-                title={<span style={{ color: isDark ? "rgba(255, 255, 255, 0.65)" : "rgba(0, 0, 0, 0.45)" }}>{t('finance.debt')}</span>}
-                value={stats.totalDebt}
-                prefix={<FallOutlined />}
-                suffix={t('shipments.som')}
-                valueStyle={{ color: isDark ? "#ff4d4f" : "#cf1322" }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={8}>
-            <Card size="small" bordered={false} style={{ background: isDark ? "#111a2c" : "#f0f9ff", border: isDark ? "1px solid #152542" : "none" }}>
-              <Statistic
-                title={<span style={{ color: isDark ? "rgba(255, 255, 255, 0.65)" : "rgba(0, 0, 0, 0.45)" }}>{t('finance.activeShipments')}</span>}
-                value={stats.debtCount}
-                prefix={<BankOutlined />}
-                valueStyle={{ color: isDark ? "#1890ff" : "inherit" }}
-              />
-            </Card>
-          </Col>
-        </Row>
+        <Table 
+          columns={isExpense ? expenseColumns : (incomeColumns as any)} 
+          dataSource={isExpense ? expenseData : (incomeData as any)} 
+          loading={loading}
+          pagination={{
+            current: currentPage,
+            total: total,
+            pageSize: pageSize,
+            showSizeChanger: false,
+            onChange: (page) => setCurrentPage(page),
+            showTotal: (total, range) => t('common.shown', { from: range[0], to: range[1], total: total.toLocaleString() })
+          }} 
+          rowKey="id" 
+          style={{ padding: "0 24px 24px 24px" }}
+        />
       </Card>
 
-      {/* Отображение сетевой ошибки */}
-      {error && (
-        <Alert
-          type="error"
-          message="Ошибка загрузки данных"
-          description={error}
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-      )}
+      <Modal
+        title={isExpense ? t('finance.newExpense') : t('finance.newIncome')}
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        footer={[
+          <Button key="back" onClick={() => setIsModalOpen(false)}>
+            {t('common.cancel')}
+          </Button>,
+          <Button key="submit" type="primary" onClick={() => { form.submit(); setIsModalOpen(false); }}>
+            {t('common.save')}
+          </Button>,
+        ]}
+      >
+        <Form form={form} layout="vertical" style={{ marginTop: 24 }}>
+          <Form.Item label={t('common.date')} name="date" rules={[{ required: true, message: t('common.selectDate') }]}>
+            <DatePicker style={{ width: '100%' }} format="DD.MM.YYYY" />
+          </Form.Item>
+          
+          <Form.Item label={t('finance.amountLabel')} name="amount" rules={[{ required: true, message: t('common.enterQuantity') }]}>
+            <Input addonAfter={t('common.som')} type="number" />
+          </Form.Item>
 
-      <Tabs items={[
-        {
-          key: "1",
-          label: "Дебиторская задолженность",
-          children: isLoading && debts.length === 0
-            ? (
-              <div style={{ textAlign: 'center', padding: '40px' }}>
-                <Spin size="large" tip="Получение актуального баланса контрагентов..." />
-              </div>
-            )
-            : (
-              <Table
-                dataSource={debts}
-                columns={debtColumns}
-                rowKey="warehouse_id"
-                pagination={{ pageSize: 20 }}
-                scroll={{ x: 'max-content' }}
-                locale={{ emptyText: 'Дебиторская задолженность по складам отсутствует.' }}
-              />
-            ),
-        },
-        {
-          key: "2",
-          label: t('finance.cashFlow'),
-          children: (
-            <Table
-              dataSource={payments}
-              columns={paymentColumns}
-              rowKey="id"
-              pagination={{ pageSize: 20 }}
-              scroll={{ x: 'max-content' }}
-              locale={{ emptyText: 'Нет истории платежей.' }}
-            />
-          ),
-        },
-        {
-          key: "3",
-          label: t('finance.report'),
-          children: (
-            <div style={{ padding: 20, color: isDark ? "rgba(255, 255, 255, 0.85)" : "inherit" }}>
-              {t('finance.reportPlaceholder')}
-            </div>
-          ),
-        },
-      ]} />
+          <Form.Item label={t('finance.paymentTypeLabel')} name="paymentType" rules={[{ required: true, message: t('finance.selectPaymentType') }]}>
+            <Select placeholder={t('finance.selectPaymentType')}>
+              <Select.Option value="cash">{t('finance.cash')}</Select.Option>
+              <Select.Option value="card">{t('finance.cashless')}</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item label={isExpense ? t('finance.entityLabelExpense') : t('finance.entityLabel')} name="entity" rules={[{ required: true, message: isExpense ? t('finance.selectRecipient') : t('finance.selectSender') }]}>
+            <Select placeholder={isExpense ? t('finance.selectRecipient') : t('finance.selectSender')}>
+              <Select.Option value="factory">{t('finance.factory')}</Select.Option>
+              <Select.Option value="driver">{t('finance.driver')}</Select.Option>
+              <Select.Option value="other">{t('finance.other')}</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item label={t('common.note')} name="note">
+            <TextArea placeholder={t('common.optional')} rows={4} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
+}
+
+function FactoryFinance() {
+  const data = [
+    { id: 1, warehouse: "Бишкек - Главный", date: "20.06.2026", amount: "50 000 сом", debt: "350 000 сом" },
+    { id: 2, warehouse: "Ош - Региональный", date: "18.06.2026", amount: "120 000 сом", debt: "120 000 сом" },
+    { id: 3, warehouse: "Джалал-Абад", date: "15.06.2026", amount: "20 000 сом", debt: "45 000 сом" },
+  ];
+
+  const columns = [
+    { title: "Склад", dataIndex: 'warehouse', key: 'warehouse', render: (text: string) => <span style={{ fontWeight: 500 }}>{text}</span> },
+    { title: "Дата последней оплаты", dataIndex: 'date', key: 'date' },
+    { title: "Сумма оплаты", dataIndex: 'amount', key: 'amount', render: (text: string) => <span style={{ color: PALETTE.success, fontWeight: 600 }}>+{text}</span> },
+    { title: "Текущий долг", dataIndex: 'debt', key: 'debt', render: (text: string) => <span style={{ color: PALETTE.error, fontWeight: 600 }}>{text}</span> },
+  ];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <Title level={2} style={{ margin: 0, fontSize: "28px", fontWeight: 700 }}>История оплат и долги складов</Title>
+      <Card bordered={false} style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }} styles={{ body: { padding: 0 } }}>
+        <Table 
+          columns={columns} 
+          dataSource={data} 
+          pagination={false} 
+          rowKey="id" 
+          style={{ padding: "24px" }}
+        />
+      </Card>
+    </div>
+  );
+}
+
+import { useUserStore } from '../store/useUserStore';
+import { UserRole } from '../types/enums';
+
+export default function FinancePage() {
+  const { user } = useUserStore();
+  const isFactory = user?.role === UserRole.Factory;
+
+  return isFactory ? <FactoryFinance /> : <WarehouseFinance />;
 }

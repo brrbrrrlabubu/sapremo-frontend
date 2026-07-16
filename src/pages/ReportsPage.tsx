@@ -1,94 +1,134 @@
-import { useEffect, useState } from "react";
-import { Card, Typography, Table, Button, Row, Col, Space, App, Tag } from "antd";
-import { FilePdfOutlined, FileExcelOutlined, BarChartOutlined } from "@ant-design/icons";
-import { useTranslation } from "react-i18next";
-import { InvoiceService } from "../services/invoice.service";
-import type { Invoice } from "../types/api.types";
-import dayjs from "dayjs";
+import { useState, useEffect } from 'react';
+import { Card, Typography, Table, Tag, Button, Select, DatePicker, Menu, Layout, Space, App } from 'antd';
+import { useTranslation } from 'react-i18next';
+import { PrinterOutlined, DownloadOutlined } from '@ant-design/icons';
+import { ProductService } from '../services/product.service';
 
 const { Title, Text } = Typography;
+const { RangePicker } = DatePicker;
+const { Sider, Content } = Layout;
 
 export default function ReportsPage() {
+  const { message } = App.useApp();
   const { t } = useTranslation();
-  const { notification } = App.useApp();
-  
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [selectedMenu, setSelectedMenu] = useState(['remains']);
+  const [loading, setLoading] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
-  useEffect(() => {
-    fetchInvoices();
-  }, []);
-
-  const fetchInvoices = async () => {
+  const loadData = async (page: number) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const data = await InvoiceService.getInvoices();
-      setInvoices(data.results || []);
-    } catch (error) {
-      notification.error({
-        message: t('errors.fetchFailed', 'Ошибка загрузки накладных'),
+      const res = await ProductService.getProducts(page, pageSize);
+      setTotal(res.count);
+      
+      const mapped = res.results.map((p: any, idx: number) => {
+        const qty = p.qty || 0;
+        const minQty = p.min_qty || 20;
+        let status = t('statuses.normal');
+        if (qty === 0 || qty < minQty * 0.3) status = t('statuses.critical');
+        else if (qty < minQty) status = t('statuses.low');
+
+        return {
+          id: p.id || idx,
+          sku: p.barcode || "—",
+          name: p.product_name || "—",
+          category: "—",
+          initial: "—",
+          income: "—",
+          expense: "—",
+          current: `${qty} ${t('common.boxes')}`,
+          status,
+        };
       });
+      setProducts(mapped);
+    } catch (err) {
+      console.error(err);
+      message.error(t('reports.errorLoading'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDownload = async (id: string, format: 'pdf' | 'excel') => {
-    setDownloadingId(`${id}-${format}`);
-    try {
-      await InvoiceService.downloadInvoice(id, format);
-      notification.success({
-        message: t('actions.download'),
-        description: `invoice_${id.substring(0, 8)}.${format === 'pdf' ? 'pdf' : 'xlsx'}`,
-        placement: "bottomRight",
-      });
-    } catch (error) {
-      notification.error({ message: t('errors.downloadFailed', 'Ошибка при скачивании файла') });
-    } finally {
-      setDownloadingId(null);
-    }
-  };
+  useEffect(() => {
+    loadData(currentPage);
+  }, [currentPage]);
+
+  const menuItems = [
+    { key: 'remains', label: t('reports.remains') },
+    { key: 'movement', label: t('reports.movement') },
+    { key: 'debts', label: t('reports.debts') },
+    { key: 'cash', label: t('reports.cash') },
+    { key: 'shipment', label: t('reports.shipmentReport') },
+    { key: 'returns', label: t('reports.returnsReport') },
+    { key: 'factory_debts', label: t('reports.factoryDebts') },
+    { key: 'low_stock', label: t('reports.lowStockReport') },
+  ];
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', key: 'id', render: (id: string) => <Text code style={{ fontSize: 11 }}>{id.substring(0, 8)}…</Text> },
-    { title: t('reports.warehouse'), dataIndex: 'warehouse_id', key: 'warehouse_id', render: (id: string) => <Text code style={{ fontSize: 11 }}>{id ? id.substring(0, 8) : 'N/A'}…</Text> },
-    { title: t('reports.amount'), dataIndex: 'total_amount', key: 'total_amount', render: (amount: string) => <Tag color="blue">{amount || '0'} сом</Tag> },
-    { title: t('reports.itemsCount'), dataIndex: 'items', key: 'items', render: (items: any[]) => items ? items.length : 0 },
-    { title: t('reports.date'), dataIndex: 'created_at', key: 'created_at', render: (date: string) => date ? dayjs(date).format('DD.MM.YYYY HH:mm') : '—' },
-    { title: t('common.actions'), key: 'actions', render: (_: any, record: Invoice) => (
-        <Space>
-          <Button type="link" icon={<FilePdfOutlined />} onClick={() => handleDownload(record.id, 'pdf')} loading={downloadingId === `${record.id}-pdf`}>PDF</Button>
-          <Button type="link" icon={<FileExcelOutlined />} onClick={() => handleDownload(record.id, 'excel')} loading={downloadingId === `${record.id}-excel`}>Excel</Button>
-        </Space>
-      ),
+    { title: t('reports.skuCol'), dataIndex: 'sku', key: 'sku' },
+    { title: t('reports.nameCol'), dataIndex: 'name', key: 'name', render: (text: string) => <Text strong>{text}</Text> },
+    { title: t('reports.categoryCol'), dataIndex: 'category', key: 'category' },
+    { title: t('reports.currentCol'), dataIndex: 'current', key: 'current' },
+    { 
+      title: t('reports.statusCol'), 
+      dataIndex: 'status', 
+      key: 'status',
+      render: (status: string) => (
+        <Tag color={status === t('statuses.normal') ? 'success' : 'error'} style={{ borderRadius: '4px' }}>
+          {status}
+        </Tag>
+      )
     },
   ];
 
   return (
-    <div>
-      <Card bordered={true} style={{ marginBottom: 24, borderRadius: "4px" }}>
-        <Title level={3} style={{ color: '#1890ff', margin: 0, fontSize: "20px" }}>{t('reports.title')}</Title>
-        <Text type="secondary" style={{ fontSize: "14px", marginTop: 4, display: "block" }}>{t('reports.subtitle')}</Text>
-      </Card>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', height: '100%' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Title level={2} style={{ margin: 0, fontSize: "28px" }}>{t('reports.title')}</Title>
+        <Space>
+          <Button icon={<PrinterOutlined />}>{t('reports.print')}</Button>
+          <Button type="primary" icon={<DownloadOutlined />}>{t('reports.exportExcel')}</Button>
+        </Space>
+      </div>
 
-      <Row gutter={16}>
-        <Col xs={24} md={16}>
-          <Card title={t('reports.invoicesList')} bordered={true} style={{ borderRadius: "4px" }}>
-            <Table loading={loading} columns={columns} dataSource={invoices} rowKey="id" pagination={{ pageSize: 20 }} scroll={{ x: 'max-content' }} locale={{ emptyText: t('reports.noData') }} />
-          </Card>
-        </Col>
+      <Layout style={{ background: 'transparent', display: 'flex', flexDirection: 'row', gap: '24px' }}>
+        <Sider width={250} style={{ background: '#ffffff', borderRadius: '8px', height: 'fit-content' }}>
+          <Menu
+            mode="inline"
+            selectedKeys={selectedMenu}
+            onSelect={(e) => setSelectedMenu(e.selectedKeys)}
+            items={menuItems}
+          />
+        </Sider>
 
-        <Col xs={24} md={8}>
-          <Card title={t('reports.quickExport')} bordered={true} style={{ borderRadius: "4px" }}>
-            <Space direction="vertical" style={{ width: "100%" }}>
-              <Button block icon={<FileExcelOutlined />}>{t('reports.exportAll')}</Button>
-              <Button block icon={<FilePdfOutlined />}>{t('reports.printSummary')}</Button>
-              <Button block type="primary" icon={<BarChartOutlined />}>{t('reports.pdfQuarter')}</Button>
-            </Space>
+        <Content style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <Card bordered={false} style={{ borderRadius: '8px' }}>
+            <div style={{ display: 'flex', gap: '24px' }}>
+              <RangePicker />
+              <Select defaultValue="main" style={{ width: 200 }} />
+              <Button type="primary">{t('common.apply')}</Button>
+            </div>
           </Card>
-        </Col>
-      </Row>
+
+          <Card bordered={false} style={{ borderRadius: '8px' }}>
+            <Table 
+              columns={columns} 
+              dataSource={products} 
+              loading={loading}
+              pagination={{
+                current: currentPage,
+                total: total,
+                pageSize: pageSize,
+                onChange: (page) => setCurrentPage(page)
+              }} 
+              rowKey="id" 
+            />
+          </Card>
+        </Content>
+      </Layout>
     </div>
   );
 }

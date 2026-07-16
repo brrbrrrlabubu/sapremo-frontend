@@ -3,6 +3,7 @@ import { ConfigProvider, App as AntdApp, theme as antTheme } from "antd";
 import AppRouter from "./router/AppRouter";
 import { useTranslation } from "react-i18next";
 import { useUIStore } from "./store/useUIStore";
+import { PALETTE, themed } from "./theme/tokens";
 import "./i18n"; // Инициализируем локализацию
 
 // Импортируем языковые пакеты Ant Design
@@ -18,8 +19,14 @@ export default function App() {
     i18n.changeLanguage(lang);
   }, [lang, i18n]);
 
+  // Синхронизируем тему с HTML-тегом для работы CSS-переменных
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
   // Выбираем локаль для компонентов Ant Design
   const currentLocale = lang === "ru" ? ruRU : enUS;
+  const tTheme = themed(theme === "dark");
 
   return (
     <ConfigProvider
@@ -28,44 +35,40 @@ export default function App() {
         // Включаем динамический алгоритм темы
         algorithm: theme === "dark" ? antTheme.darkAlgorithm : antTheme.defaultAlgorithm,
         token: {
-          colorPrimary: "#1890ff", // фирменный яркий голубой цвет
+          colorPrimary: PALETTE.primary, // фирменный яркий голубой цвет
           borderRadius: 6,
           fontFamily: "Inter, sans-serif",
-          colorSuccess: "#52c41a",
-          colorWarning: "#fa8c16",
-          colorError: "#ff4d4f",
+          colorSuccess: PALETTE.success,
+          colorWarning: PALETTE.warning,
+          colorError: PALETTE.error,
           fontSize: 14,
           
-          // Глобальное исправление фонов рабочих областей во всех модулях
-          colorBgLayout: theme === "dark" ? "#141414" : "#f5f5f5",
-          // Тот самый не ослепляющий цвет для подложек, форм и карточек
-          colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff", 
-          
-          // Автоматическая инверсия текста для стопроцентной читаемости
-          colorText: theme === "dark" ? "rgba(255, 255, 255, 0.85)" : "#000000",
-          colorTextHeading: theme === "dark" ? "#ffffff" : "#1f1f1f",
-          colorBorder: theme === "dark" ? "#303030" : "#d9d9d9",
+          colorBgLayout: tTheme.layout,
+          colorBgContainer: tTheme.container,
+          colorText: tTheme.text,
+          colorTextHeading: tTheme.text,
+          colorBorder: tTheme.border,
         },
         components: {
-          // Настройка "сайдбар"
           Menu: {
             itemBg: "transparent",
-            itemSelectedBg: theme === "dark" ? "#111a2c" : "#e6f7ff", // темнее для темной темы
-            itemSelectedColor: "#1890ff",
-            itemColor: theme === "dark" ? "rgba(255, 255, 255, 0.85)" : "#000000", // адаптивный цвет текста
+            itemSelectedBg: theme === 'dark' ? 'rgba(59, 130, 246, 0.15)' : "#e6f4ff", 
+            itemSelectedColor: PALETTE.primary,
+            itemColor: tTheme.textSecondary, 
+            itemHoverBg: "transparent",
+            itemHoverColor: PALETTE.primary,
           },
-          // Настройка "таблицы"
           Table: {
-            headerBg: theme === "dark" ? "#1f1f1f" : "#fafafa", // адаптивный фон шапки
-            headerColor: theme === "dark" ? "rgba(255, 255, 255, 0.85)" : "#000000",
+            headerBg: tTheme.elevated,
+            headerColor: tTheme.textSecondary,
             headerSplitColor: "transparent",
-            rowHoverBg: theme === "dark" ? "#262626" : "#f5f5f5",
+            rowHoverBg: tTheme.layout,
           },
           // Настройка "вкладки"
           Tabs: {
-            inkBarColor: "#1890ff",
-            itemActiveColor: "#1890ff",
-            itemColor: theme === "dark" ? "rgba(255, 255, 255, 0.65)" : "#000000",
+            inkBarColor: PALETTE.primary,
+            itemActiveColor: PALETTE.primary,
+            itemColor: tTheme.textSecondary,
             horizontalMargin: "0 0 16px 0",
           },
           // Настройка "модальное окно"
@@ -79,17 +82,17 @@ export default function App() {
           },
           // Настройка "поля ввода" (Input) и "Селекты"
           Input: {
-            activeBorderColor: "#1890ff",
-            hoverBorderColor: "#40a9ff",
-            colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
+            activeBorderColor: PALETTE.primary,
+            hoverBorderColor: PALETTE.primaryHover,
+            colorBgContainer: tTheme.container,
           },
           Select: {
-            activeBorderColor: "#1890ff",
-            colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
+            activeBorderColor: PALETTE.primary,
+            colorBgContainer: tTheme.container,
           },
           // Настройка "карточки" (исправляет блоки в Финансовой аналитике)
           Card: {
-            colorBgContainer: theme === "dark" ? "#1f1f1f" : "#ffffff",
+            colorBgContainer: tTheme.container,
           },
         },
       }}
