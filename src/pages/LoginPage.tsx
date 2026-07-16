@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Card, Form, Input, Button, Typography, App } from "antd";
-import { LockOutlined, UserOutlined } from "@ant-design/icons";
+import { Card, Form, Input, Button, Typography, App, Select } from "antd";
+import { LockOutlined, UserOutlined, SolutionOutlined } from "@ant-design/icons";
 import { useUserStore } from "../store/useUserStore";
 import { AuthService } from "../services/auth.service";
 
@@ -14,19 +14,17 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { setUser, syncAuthFromStorage } = useUserStore();
 
-  // Возвращаемся на страницу, с которой пользователь был перенаправлен на логин
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? '/';
 
-  const onFinish = async (values: { username: string; password: string }) => {
+  // Обновили типы значений формы
+  const onFinish = async (values: { username: string; password: string; role: string }) => {
     setLoading(true);
     try {
-      // Реальный API-вызов: токены сохраняются в localStorage внутри AuthService.login()
-      const loginData = await AuthService.login(values.username, values.password);
+      // Передаем роль в сервис
+      const loginData = await AuthService.login(values.username, values.password, values.role);
 
-      // Синхронизируем Zustand-стор с обновлённым токеном
       syncAuthFromStorage();
 
-      // Сохраняем профиль пользователя из ответа API
       setUser({
         id: loginData.user.id,
         name: loginData.user.full_name || loginData.user.username,
@@ -36,8 +34,8 @@ export default function LoginPage() {
       message.success("Добро пожаловать в SAPREMO!");
       navigate(from, { replace: true });
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Ошибка авторизации. Проверьте учётные данные.';
-      message.error(errorMsg);
+      console.error("Login error:", err);
+      message.error("Ошибка авторизации. Проверьте логин, пароль и роль.");
     } finally {
       setLoading(false);
     }
@@ -52,6 +50,12 @@ export default function LoginPage() {
             <Input prefix={<UserOutlined />} placeholder="Логин" />
           </Form.Item>
           
+          <Form.Item name="role" rules={[{ required: true, message: "Выберите роль!" }]}>
+            <Select placeholder="Выберите роль" suffixIcon={<SolutionOutlined />}>
+              <Select.Option value="admin">Админ</Select.Option>
+              <Select.Option value="manager">Менеджер</Select.Option>
+            </Select>
+          </Form.Item>
 
           <Form.Item name="password" rules={[{ required: true, message: "Введите пароль!" }]}>
             <Input.Password prefix={<LockOutlined />} placeholder="Пароль" />

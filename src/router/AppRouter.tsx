@@ -16,17 +16,30 @@ const router = createBrowserRouter([
     path: "/",
     element: <Mainlayout />,
     children: [
+      // Пути, доступные всем авторизованным
       {
         element: <ProtectedRoute allowedRoles={["admin", "manager", "factory", "accountant"]} />,
         children: [
           { index: true, element: <DashboardPage /> },
           { path: "shipments", element: <ShipmentsPage /> },
+        ],
+      },
+      // Пути для склада и производства
+      {
+        element: <ProtectedRoute allowedRoles={["admin", "manager", "factory"]} />,
+        children: [
           { path: "warehouses", element: <WarehousePage /> },
+          { path: "inventory", element: <InventoryPage /> },
+          { path: "requests", element: <WarehouseRequestsPage /> },
+        ],
+      },
+      // Пути для финансов и аналитики (только админ и бухгалтер)
+      {
+        element: <ProtectedRoute allowedRoles={["admin", "accountant"]} />,
+        children: [
           { path: "finance", element: <FinancePage /> },
           { path: "analytics", element: <AnalyticsPage /> },
           { path: "reports", element: <ReportsPage /> },
-          { path: "inventory", element: <InventoryPage /> },
-          { path: "requests", element: <WarehouseRequestsPage /> },
         ],
       },
     ],
