@@ -16,6 +16,7 @@ export default function DriverRequestsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [productsMap, setProductsMap] = useState<Record<string, any>>({});
+  const [driversMap, setDriversMap] = useState<Record<string, string>>({});
   const pageSize = 10;
   const { t } = useTranslation();
 
@@ -47,8 +48,22 @@ export default function DriverRequestsPage() {
     }
   };
 
+  const fetchDriversMap = async () => {
+    try {
+      const data = await DriverService.getDrivers({ page: 0, size: 100 });
+      const map: Record<string, string> = {};
+      data.content?.forEach((d: any) => {
+        map[d.id] = d.fullName;
+      });
+      setDriversMap(map);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
+    fetchDriversMap();
   }, []);
 
   useEffect(() => {
@@ -86,7 +101,7 @@ export default function DriverRequestsPage() {
       title: 'Водитель', 
       dataIndex: 'driverId', 
       key: 'driverId',
-      render: (text: string, record: any) => record.driverName || (text ? text.substring(0, 6) : 'Н/Д')
+      render: (text: string, record: any) => driversMap[text] || record.driverName || (text ? text.substring(0, 6) : 'Н/Д')
     },
     { 
       title: 'Сумма', 
@@ -177,7 +192,7 @@ export default function DriverRequestsPage() {
               <div>
                 <Title level={3} style={{ margin: 0, fontSize: '24px' }}>Заявка</Title>
                 <div style={{ color: 'var(--color-text-secondary, #8c8c8c)', marginTop: 8, fontSize: '14px' }}>
-                  Водитель: {selectedOrder?.driverName || selectedOrder?.driverId?.substring(0, 6) || 'Н/Д'}
+                  Водитель: {driversMap[selectedOrder?.driverId] || selectedOrder?.driverName || selectedOrder?.driverId?.substring(0, 6) || 'Н/Д'}
                 </div>
                 <div style={{ color: 'var(--color-text-secondary, #8c8c8c)', marginTop: 4, fontSize: '14px' }}>
                   {t('driverRequests.modalRequestDate')}: {selectedOrder && new Date(selectedOrder.createdAt).toLocaleDateString('ru-RU')}

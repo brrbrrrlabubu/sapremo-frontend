@@ -7,6 +7,7 @@ import {
 } from '@ant-design/icons';
 import { PALETTE } from '../theme/tokens';
 import { PaymentService } from '../services/payment.service';
+import { DriverService } from '../services/driver.service';
 import type { Payment } from '../types/api.types';
 
 const { Title, Text } = Typography;
@@ -27,8 +28,22 @@ function WarehouseFinance() {
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
+  const [driversMap, setDriversMap] = useState<Record<string, string>>({});
 
   const [totalDebt, setTotalDebt] = useState<number>(0);
+
+  const fetchDriversMap = async () => {
+    try {
+      const data = await DriverService.getDrivers({ page: 0, size: 100 });
+      const map: Record<string, string> = {};
+      data.content?.forEach((d: any) => {
+        map[d.id] = d.fullName;
+      });
+      setDriversMap(map);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const loadData = async (page: number) => {
     setLoading(true);
@@ -49,6 +64,7 @@ function WarehouseFinance() {
   };
 
   useEffect(() => {
+    fetchDriversMap();
     loadData(currentPage);
   }, [currentPage]);
 
@@ -59,7 +75,7 @@ function WarehouseFinance() {
       date: new Date(p.operation_time || p.paid_at || p.created_at || Date.now()).toLocaleDateString('ru-RU'),
       amount: `+${parseFloat(p.amount).toLocaleString()} ${t('common.som')}`,
       paymentType: p.payment_method || t('finance.cash'),
-      driver: p.client_name || (p.client_id ? `Клиент ${p.client_id.slice(0, 6)}` : "—"),
+      driver: driversMap[p.client_id] || p.client_name || (p.client_id ? `Клиент ${p.client_id.slice(0, 6)}` : "—"),
       note: p.comment || "—",
     }));
 
@@ -70,7 +86,7 @@ function WarehouseFinance() {
       date: new Date(p.operation_time || p.paid_at || p.created_at || Date.now()).toLocaleDateString('ru-RU'),
       amount: `${parseFloat(p.amount).toLocaleString()} ${t('common.som')}`,
       paymentType: p.payment_method || t('finance.cash'),
-      recipient: p.client_name || (p.client_id ? `Клиент ${p.client_id.slice(0, 6)}` : "—"),
+      recipient: driversMap[p.client_id] || p.client_name || (p.client_id ? `Клиент ${p.client_id.slice(0, 6)}` : "—"),
       note: p.comment || "—",
     }));
 

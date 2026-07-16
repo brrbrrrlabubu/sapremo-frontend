@@ -12,6 +12,7 @@ export default function ReturnsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [productsMap, setProductsMap] = useState<Record<string, any>>({});
+  const [driversMap, setDriversMap] = useState<Record<string, string>>({});
   const pageSize = 10;
 
   const fetchProducts = async () => {
@@ -41,8 +42,22 @@ export default function ReturnsPage() {
     }
   };
 
+  const fetchDriversMap = async () => {
+    try {
+      const data = await DriverService.getDrivers({ page: 0, size: 100 });
+      const map: Record<string, string> = {};
+      data.content?.forEach((d: any) => {
+        map[d.id] = d.fullName;
+      });
+      setDriversMap(map);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
+    fetchDriversMap();
   }, []);
 
   useEffect(() => {
@@ -83,7 +98,7 @@ export default function ReturnsPage() {
       title: t('returns.driverCol'), 
       dataIndex: 'driverId', 
       key: 'driverId',
-      render: (text: string, record: any) => record.driverName || (text ? text.substring(0, 6) : 'Н/Д')
+      render: (text: string, record: any) => driversMap[text] || record.driverName || (text ? text.substring(0, 6) : 'Н/Д')
     },
     { 
       title: t('returns.productCol'), 

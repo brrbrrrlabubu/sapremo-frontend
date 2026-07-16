@@ -28,7 +28,21 @@ function WarehouseDashboard() {
   const [topDrivers, setTopDrivers] = useState<any[]>([]);
   const [driverDebtSum, setDriverDebtSum] = useState<number>(0);
   const [productsMap, setProductsMap] = useState<Record<string, any>>({});
+  const [driversMap, setDriversMap] = useState<Record<string, string>>({});
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+
+  const fetchDriversMap = async () => {
+    try {
+      const data = await DriverService.getDrivers({ page: 0, size: 100 });
+      const map: Record<string, string> = {};
+      data.content?.forEach((d: any) => {
+        map[d.id] = d.fullName;
+      });
+      setDriversMap(map);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const fetchProductsMap = async () => {
     try {
@@ -47,6 +61,7 @@ function WarehouseDashboard() {
     setLoading(true);
     try {
       fetchProductsMap();
+      fetchDriversMap();
       const [kpis, products, debtsResp, ordersResp] = await Promise.all([
         StatsService.getKpis(),
         StatsService.getTopProducts(),
@@ -114,7 +129,7 @@ function WarehouseDashboard() {
 
   const recentCols = [
     { title: t('dashboard.dateCol'), dataIndex: 'createdAt', key: 'createdAt', render: (text: string) => new Date(text).toLocaleDateString('ru-RU') },
-    { title: t('dashboard.driverCol'), dataIndex: 'driverId', key: 'driverId', render: (text: string, record: any) => record.driverName || (text ? text.substring(0, 6) : 'Н/Д') },
+    { title: t('dashboard.driverCol'), dataIndex: 'driverId', key: 'driverId', render: (text: string, record: any) => driversMap[text] || record.driverName || (text ? text.substring(0, 6) : 'Н/Д') },
     { title: t('dashboard.amountCol'), dataIndex: 'totalAmount', key: 'totalAmount', render: (text: string) => <strong>{text} сом</strong> },
     { title: t('dashboard.statusCol'), dataIndex: 'status', key: 'status', render: (status: string) => <Tag color={getStatusConfig(status).color} style={{ borderRadius: "12px", padding: "2px 10px" }}>{getStatusConfig(status).label}</Tag> },
     { title: t('dashboard.actionsCol'), key: 'action', render: (_: any, record: any) => <Button icon={<EyeOutlined />} size="small" style={{ borderRadius: "6px" }} onClick={() => { setSelectedOrder(record); setIsModalOpen(true); }}>{t('common.view')}</Button> },
@@ -196,7 +211,7 @@ function WarehouseDashboard() {
               <div>
                 <Title level={3} style={{ margin: 0, fontSize: '24px' }}>Заявка</Title>
                 <div style={{ color: 'var(--color-text-secondary, #8c8c8c)', marginTop: 8, fontSize: '14px' }}>
-                  Водитель: {selectedOrder?.driverName || selectedOrder?.driverId?.substring(0, 6) || 'Н/Д'}
+                  Водитель: {driversMap[selectedOrder?.driverId] || selectedOrder?.driverName || selectedOrder?.driverId?.substring(0, 6) || 'Н/Д'}
                 </div>
                 <div style={{ color: 'var(--color-text-secondary, #8c8c8c)', marginTop: 4, fontSize: '14px' }}>
                   {t('dashboard.requestDate')}: {selectedOrder && new Date(selectedOrder.createdAt).toLocaleDateString('ru-RU')}
