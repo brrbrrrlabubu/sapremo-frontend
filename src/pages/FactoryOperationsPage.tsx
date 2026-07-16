@@ -35,7 +35,7 @@ export default function FactoryOperationsPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <Title level={2} style={{ margin: 0, fontSize: "28px", fontWeight: 700 }}>
-        Завод
+        Логистика
       </Title>
 
       <Tabs

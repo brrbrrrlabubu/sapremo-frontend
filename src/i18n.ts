@@ -79,6 +79,7 @@ const resources = {
         drivers: 'Водители',
         driverRequests: 'Заявки водителей',
         requests: 'Заявки',
+        factory: 'Логистика',
         receiving: 'Приёмка',
         shipments: 'Выдача',
         finance: 'Касса',
@@ -132,7 +133,7 @@ const resources = {
       },
       // ─── Склад / Товары ─────────────────────────────────────────────────
       warehouse: {
-        title: 'Склад',
+        title: 'Товары',
         titleLoading: 'Товары',
         subtitle: 'Управление ассортиментом и инвентаризацией',
         barcodeCol: 'Штрих-код',
@@ -283,7 +284,7 @@ const resources = {
         cash: 'Касса',
         shipmentReport: 'Выдача',
         returnsReport: 'Возвраты',
-        factoryDebts: 'Задолженность перед заводом',
+        factoryDebts: 'Долги перед заводом',
         lowStockReport: 'Низкий остаток',
         // Filters
         period: 'Период',
@@ -422,6 +423,7 @@ const resources = {
         drivers: 'Drivers',
         driverRequests: 'Driver Requests',
         requests: 'Requests',
+        factory: 'Logistics',
         receiving: 'Receiving',
         shipments: 'Shipments',
         finance: 'Finance',
@@ -473,7 +475,7 @@ const resources = {
       },
       // ─── Warehouse / Products ───────────────────────────────────────────
       warehouse: {
-        title: 'Warehouse',
+        title: 'Products',
         titleLoading: 'Products',
         subtitle: 'Assortment and inventory management',
         barcodeCol: 'Barcode',

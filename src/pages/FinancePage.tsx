@@ -59,7 +59,7 @@ function WarehouseFinance() {
       date: new Date(p.operation_time || p.paid_at || p.created_at || Date.now()).toLocaleDateString('ru-RU'),
       amount: `+${parseFloat(p.amount).toLocaleString()} ${t('common.som')}`,
       paymentType: p.payment_method || t('finance.cash'),
-      driver: p.client_id ? `Клиент ${p.client_id.slice(0, 8)}` : "—",
+      driver: p.client_name || (p.client_id ? `Клиент ${p.client_id.slice(0, 6)}` : "—"),
       note: p.comment || "—",
     }));
 
@@ -70,7 +70,7 @@ function WarehouseFinance() {
       date: new Date(p.operation_time || p.paid_at || p.created_at || Date.now()).toLocaleDateString('ru-RU'),
       amount: `${parseFloat(p.amount).toLocaleString()} ${t('common.som')}`,
       paymentType: p.payment_method || t('finance.cash'),
-      recipient: p.client_id ? `Клиент ${p.client_id.slice(0, 8)}` : "—",
+      recipient: p.client_name || (p.client_id ? `Клиент ${p.client_id.slice(0, 6)}` : "—"),
       note: p.comment || "—",
     }));
 

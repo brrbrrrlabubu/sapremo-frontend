@@ -83,10 +83,10 @@ export default function DriverRequestsPage() {
 
   const columns = [
     { 
-      title: 'Водитель (ID)', 
+      title: 'Водитель', 
       dataIndex: 'driverId', 
       key: 'driverId',
-      render: (text: string) => text ? text.substring(0, 8) + '...' : 'Н/Д'
+      render: (text: string, record: any) => record.driverName || (text ? text.substring(0, 6) : 'Н/Д')
     },
     { 
       title: 'Сумма', 
@@ -177,7 +177,7 @@ export default function DriverRequestsPage() {
               <div>
                 <Title level={3} style={{ margin: 0, fontSize: '24px' }}>Заявка</Title>
                 <div style={{ color: 'var(--color-text-secondary, #8c8c8c)', marginTop: 8, fontSize: '14px' }}>
-                  Водитель ID: {selectedOrder?.driverId?.substring(0, 8)}...
+                  Водитель: {selectedOrder?.driverName || selectedOrder?.driverId?.substring(0, 6) || 'Н/Д'}
                 </div>
                 <div style={{ color: 'var(--color-text-secondary, #8c8c8c)', marginTop: 4, fontSize: '14px' }}>
                   {t('driverRequests.modalRequestDate')}: {selectedOrder && new Date(selectedOrder.createdAt).toLocaleDateString('ru-RU')}

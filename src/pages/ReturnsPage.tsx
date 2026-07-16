@@ -83,7 +83,7 @@ export default function ReturnsPage() {
       title: t('returns.driverCol'), 
       dataIndex: 'driverId', 
       key: 'driverId',
-      render: (text: string) => text ? text.substring(0, 8) + '...' : 'Н/Д'
+      render: (text: string, record: any) => record.driverName || (text ? text.substring(0, 6) : 'Н/Д')
     },
     { 
       title: t('returns.productCol'), 
