@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Row, Col, Card, Typography, Table, Tag, Button, Select, Modal, App } from 'antd';
+import { Row, Col, Card, Typography, Table, Tag, Button, Modal, App } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { 
   InboxOutlined, 
@@ -10,10 +10,12 @@ import {
 } from '@ant-design/icons';
 import { PALETTE } from '../theme/tokens';
 import { StatsService } from '../services/stats.service';
+import { DriverService } from '../services/driver.service';
+import { ProductService } from '../services/product.service';
 
 const { Text, Title } = Typography;
 
-export default function DashboardPage() {
+function WarehouseDashboard() {
   const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,14 +23,37 @@ export default function DashboardPage() {
   
   const [topProducts, setTopProducts] = useState<any[]>([]);
   const [kpiData, setKpiData] = useState<any>(null);
+  
+  const [recentRequests, setRecentRequests] = useState<any[]>([]);
+  const [topDrivers, setTopDrivers] = useState<any[]>([]);
+  const [driverDebtSum, setDriverDebtSum] = useState<number>(0);
+  const [productsMap, setProductsMap] = useState<Record<string, any>>({});
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+
+  const fetchProductsMap = async () => {
+    try {
+      const data = await ProductService.getProducts(1, 100);
+      const map: Record<string, any> = {};
+      data.results.forEach((p: any) => {
+        map[p.id] = p;
+      });
+      setProductsMap(map);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [kpis, products] = await Promise.all([
+      fetchProductsMap();
+      const [kpis, products, debtsResp, ordersResp] = await Promise.all([
         StatsService.getKpis(),
-        StatsService.getTopProducts()
+        StatsService.getTopProducts(),
+        DriverService.getDebts({ size: 5 }), // Top 5
+        DriverService.getOrders({ size: 5 }) // Last 5 orders
       ]);
+      
       if (kpis) setKpiData(kpis);
       if (products && Array.isArray(products)) {
         setTopProducts(products.map((p: any, i: number) => ({
@@ -38,6 +63,25 @@ export default function DashboardPage() {
           total: `${p.total || 0} сом`
         })));
       }
+      
+      if (debtsResp && debtsResp.content) {
+        setTopDrivers(debtsResp.content.map((d: any) => ({
+          id: d.driverId,
+          driver: d.fullName,
+          car: d.carNumber || "Н/Д",
+          total: `${d.totalDebt} сом`
+        })));
+        
+        // В идеале сумму должен считать бэк, но если нет:
+        let sum = 0;
+        debtsResp.content.forEach((d: any) => sum += d.totalDebt || 0);
+        setDriverDebtSum(sum);
+      }
+      
+      if (ordersResp && ordersResp.content) {
+        setRecentRequests(ordersResp.content);
+      }
+      
     } catch (e) {
       console.error(e);
       message.error(t('dashboard.errorLoading'));
@@ -52,34 +96,28 @@ export default function DashboardPage() {
 
   const kpis = [
     { title: t('dashboard.stock'), value: kpiData?.total_stock || "0", suffix: ` ${t('dashboard.unit')}`, icon: <InboxOutlined style={{ color: PALETTE.primary }} />, iconBg: "rgba(59, 130, 246, 0.15)" },
-    { title: t('dashboard.driverDebt'), value: kpiData?.driver_debt || "0", suffix: ` ${t('common.som')}`, icon: <FallOutlined style={{ color: PALETTE.error }} />, iconBg: "rgba(239, 68, 68, 0.15)" },
+    { title: t('dashboard.driverDebt'), value: driverDebtSum || kpiData?.driver_debt || "0", suffix: ` ${t('common.som')}`, icon: <FallOutlined style={{ color: PALETTE.error }} />, iconBg: "rgba(239, 68, 68, 0.15)" },
     { title: t('dashboard.cashbox'), value: kpiData?.cashbox || "0", suffix: ` ${t('common.som')}`, icon: <WalletOutlined style={{ color: PALETTE.success }} />, iconBg: "rgba(16, 185, 129, 0.15)" },
     { title: t('dashboard.factoryDebt'), value: kpiData?.factory_debt || "0", suffix: ` ${t('common.som')}`, icon: <BankOutlined style={{ color: "#d48806" }} />, iconBg: "rgba(245, 158, 11, 0.15)" },
   ];
 
-  const recentRequests = [
-    { id: 1, date: "16.06.2026", driver: "Саматов Тимур", amount: "15 000 сом", status: t('statuses.issued'), statusColor: "success" },
-    { id: 2, date: "16.06.2026", driver: "Саматов Тимур", amount: "15 000 сом", status: t('statuses.pending'), statusColor: "warning" },
-    { id: 3, date: "16.06.2026", driver: "Саматов Тимур", amount: "15 000 сом", status: t('statuses.rejected'), statusColor: "error" },
-    { id: 4, date: "16.06.2026", driver: "Саматов Тимур", amount: "15 000 сом", status: t('statuses.confirmed'), statusColor: "processing" },
-  ];
-
-
-
-  const topDrivers = [
-    { id: 1, driver: "Саматов Тимур", car: "MH 1234 KG", sold: "1 280", total: "55,800 сом" },
-    { id: 2, driver: "Саматов Тимур", car: "MH 1234 KG", sold: "1 280", total: "55,800 сом" },
-    { id: 3, driver: "Саматов Тимур", car: "MH 1234 KG", sold: "1 280", total: "55,800 сом" },
-    { id: 4, driver: "Саматов Тимур", car: "MH 1234 KG", sold: "1 280", total: "55,800 сом" },
-    { id: 5, driver: "Саматов Тимур", car: "MH 1234 KG", sold: "1 280", total: "55,800 сом" },
-  ];
+  const getStatusConfig = (status: string) => {
+    switch(status) {
+      case 'NEW': return { color: 'warning', label: 'Новая' };
+      case 'CONFIRMED': return { color: 'processing', label: 'Подтверждена' };
+      case 'MODIFIED': return { color: 'warning', label: 'Изменена' };
+      case 'REJECTED': return { color: 'error', label: 'Отклонена' };
+      case 'DISPATCHED': return { color: 'success', label: 'Отгружена' };
+      default: return { color: 'default', label: status };
+    }
+  };
 
   const recentCols = [
-    { title: t('dashboard.dateCol'), dataIndex: 'date', key: 'date' },
-    { title: t('dashboard.driverCol'), dataIndex: 'driver', key: 'driver' },
-    { title: t('dashboard.amountCol'), dataIndex: 'amount', key: 'amount', render: (text: string) => <strong>{text}</strong> },
-    { title: t('dashboard.statusCol'), dataIndex: 'status', key: 'status', render: (status: string, record: any) => <Tag color={record.statusColor} style={{ borderRadius: "12px", padding: "2px 10px" }}>{status}</Tag> },
-    { title: t('dashboard.actionsCol'), key: 'action', render: () => <Button icon={<EyeOutlined />} size="small" style={{ borderRadius: "6px" }} onClick={() => setIsModalOpen(true)}>{t('common.view')}</Button> },
+    { title: t('dashboard.dateCol'), dataIndex: 'createdAt', key: 'createdAt', render: (text: string) => new Date(text).toLocaleDateString('ru-RU') },
+    { title: t('dashboard.driverCol'), dataIndex: 'driverId', key: 'driverId', render: (text: string) => text ? text.substring(0, 8) + '...' : 'Н/Д' },
+    { title: t('dashboard.amountCol'), dataIndex: 'totalAmount', key: 'totalAmount', render: (text: string) => <strong>{text} сом</strong> },
+    { title: t('dashboard.statusCol'), dataIndex: 'status', key: 'status', render: (status: string) => <Tag color={getStatusConfig(status).color} style={{ borderRadius: "12px", padding: "2px 10px" }}>{getStatusConfig(status).label}</Tag> },
+    { title: t('dashboard.actionsCol'), key: 'action', render: (_: any, record: any) => <Button icon={<EyeOutlined />} size="small" style={{ borderRadius: "6px" }} onClick={() => { setSelectedOrder(record); setIsModalOpen(true); }}>{t('common.view')}</Button> },
   ];
 
   const topProductsCols = [
@@ -92,8 +130,7 @@ export default function DashboardPage() {
   const topDriversCols = [
     { title: t('dashboard.driverCol'), dataIndex: 'driver', key: 'driver' },
     { title: t('dashboard.carCol'), dataIndex: 'car', key: 'car', render: (text: string) => <span style={{ background: "var(--color-bg-layout, #f0f0f0)", padding: "2px 8px", borderRadius: "4px", fontSize: "12px", border: "1px solid var(--color-border, #e8e8e8)", color: "var(--color-text-secondary, #8c8c8c)" }}>{text}</span> },
-    { title: t('dashboard.soldCol'), dataIndex: 'sold', key: 'sold' },
-    { title: t('dashboard.salesCol'), dataIndex: 'total', key: 'total', render: (text: string) => <span style={{ color: PALETTE.success, fontWeight: 500 }}>{text}</span> },
+    { title: 'Долг', dataIndex: 'total', key: 'total', render: (text: string) => <span style={{ color: PALETTE.error, fontWeight: 500 }}>{text}</span> },
   ];
 
   return (
@@ -121,7 +158,6 @@ export default function DashboardPage() {
 
       <Card 
         title={<span style={{ fontSize: "18px", fontWeight: 600 }}>{t('dashboard.recentRequests')}</span>} 
-        extra={<Button style={{ borderRadius: "6px" }}>{t('dashboard.allRequests')}</Button>} 
         bordered={false} 
         style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}
         styles={{ body: { padding: 0 } }}
@@ -131,7 +167,6 @@ export default function DashboardPage() {
 
       <Card 
         title={<span style={{ fontSize: "18px", fontWeight: 600 }}>{t('dashboard.topProducts')}</span>} 
-        extra={<Select defaultValue="top5" style={{ width: 100, borderRadius: "6px" }} options={[{ value: 'top5', label: t('dashboard.top5') }, { value: 'top10', label: t('dashboard.top10') }]} />}
         bordered={false} 
         style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}
         styles={{ body: { padding: 0 } }}
@@ -140,7 +175,7 @@ export default function DashboardPage() {
       </Card>
 
       <Card 
-        title={<span style={{ fontSize: "18px", fontWeight: 600 }}>{t('dashboard.topDrivers')}</span>} 
+        title={<span style={{ fontSize: "18px", fontWeight: 600 }}>{t('dashboard.topDrivers')} (Должники)</span>} 
         bordered={false} 
         style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}
         styles={{ body: { padding: 0 } }}
@@ -153,25 +188,24 @@ export default function DashboardPage() {
         onCancel={() => setIsModalOpen(false)}
         width={700}
         footer={[
-          <Button key="issue" style={{ color: PALETTE.success, background: 'rgba(82, 196, 26, 0.15)', borderColor: 'transparent', borderRadius: '6px' }} onClick={() => setIsModalOpen(false)}>
-            {t('statuses.issued')}
-          </Button>
+          <Button key="close" onClick={() => setIsModalOpen(false)}>Закрыть</Button>
         ]}
         title={
           <div style={{ paddingRight: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <Title level={3} style={{ margin: 0, fontSize: '24px' }}>Саматов Тимур</Title>
+                <Title level={3} style={{ margin: 0, fontSize: '24px' }}>Заявка</Title>
                 <div style={{ color: 'var(--color-text-secondary, #8c8c8c)', marginTop: 8, fontSize: '14px' }}>
-                  MH 1234 KG · +996 700 111 222
+                  Водитель ID: {selectedOrder?.driverId?.substring(0, 8)}...
                 </div>
                 <div style={{ color: 'var(--color-text-secondary, #8c8c8c)', marginTop: 4, fontSize: '14px' }}>
-                  {t('dashboard.requestDate')} 20.06.2026
+                  {t('dashboard.requestDate')}: {selectedOrder && new Date(selectedOrder.createdAt).toLocaleDateString('ru-RU')}
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: PALETTE.success, fontWeight: 500, fontSize: '14px' }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: PALETTE.success }} />
-                {t('statuses.issued')}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500, fontSize: '14px' }}>
+                <Tag color={selectedOrder ? getStatusConfig(selectedOrder.status).color : 'default'}>
+                  {selectedOrder ? getStatusConfig(selectedOrder.status).label : ''}
+                </Tag>
               </div>
             </div>
           </div>
@@ -179,20 +213,8 @@ export default function DashboardPage() {
       >
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 32, marginBottom: 32, fontSize: '14px' }}>
           <div>
-            <span style={{ color: 'var(--color-text-secondary, #8c8c8c)', marginRight: 8 }}>{t('dashboard.modalDriver')}</span>
-            <span>Саматов Тимур</span>
-          </div>
-          <div>
-            <span style={{ color: 'var(--color-text-secondary, #8c8c8c)', marginRight: 8 }}>{t('dashboard.modalCar')}</span>
-            <span style={{ background: 'var(--color-bg-layout, #f5f5f5)', padding: '2px 8px', borderRadius: 4, border: '1px solid var(--color-border, #e8e8e8)', color: 'var(--color-text-secondary, #595959)' }}>MH 1234 KG</span>
-          </div>
-          <div>
-            <span style={{ color: 'var(--color-text-secondary, #8c8c8c)', marginRight: 8 }}>{t('dashboard.modalDate')}</span>
-            <span>20.06.2026</span>
-          </div>
-          <div>
             <span style={{ color: 'var(--color-text-secondary, #8c8c8c)', marginRight: 8 }}>{t('dashboard.modalTotal')}</span>
-            <span style={{ fontWeight: 600 }}>15 000 сом</span>
+            <span style={{ fontWeight: 600 }}>{selectedOrder?.totalAmount || 0} сом</span>
           </div>
         </div>
 
@@ -201,27 +223,71 @@ export default function DashboardPage() {
           pagination={false}
           size="middle"
           columns={[
-            { title: t('common.product'), dataIndex: 'name', key: 'name' },
-            { title: t('common.quantity'), dataIndex: 'qty', key: 'qty' },
-            { title: t('dashboard.priceCol'), dataIndex: 'price', key: 'price' },
-            { title: t('dashboard.totalCol'), dataIndex: 'total', key: 'total', render: (text: string) => <span style={{ fontWeight: 600 }}>{text}</span> }
+            { title: t('common.product'), dataIndex: 'productId', key: 'product', render: (id: string) => id ? (productsMap[id]?.name || `ID: ${id.substring(0,8)}`) : 'Н/Д' },
+            { title: 'Запрошено', dataIndex: 'requestedQty', key: 'requestedQty' },
+            { title: 'Одобрено', dataIndex: 'approvedQty', key: 'approvedQty' },
+            { title: t('dashboard.priceCol'), key: 'price', render: (_, record: any) => `${productsMap[record.productId]?.dispatch_price || 0} сом` },
+            { title: t('dashboard.totalCol'), key: 'total', render: (_, record: any) => {
+              const price = parseFloat(productsMap[record.productId]?.dispatch_price || '0');
+              const qty = record.approvedQty || 0;
+              return <span style={{ fontWeight: 600 }}>{price * qty} сом</span>;
+            }}
           ]}
-          dataSource={[
-            { id: 1, name: "Пломбир «Сливочный» 80г", qty: 10, price: "42 сом", total: "4 200 сом" },
-            { id: 2, name: "Эскимо в шоколаде", qty: 5, price: "60 сом", total: "3 000 сом" },
-            { id: 3, name: "Рожок фисташковый", qty: 4, price: "78 сом", total: "3 120 сом" },
-          ]}
+          dataSource={selectedOrder?.items || []}
           rowKey="id"
-          summary={() => (
-            <Table.Summary.Row style={{ background: 'var(--color-bg-layout, #fafafa)' }}>
-              <Table.Summary.Cell index={0}><span style={{ fontWeight: 600 }}>{t('dashboard.total')}</span></Table.Summary.Cell>
-              <Table.Summary.Cell index={1}></Table.Summary.Cell>
-              <Table.Summary.Cell index={2}></Table.Summary.Cell>
-              <Table.Summary.Cell index={3}><span style={{ color: PALETTE.primary, fontWeight: 600 }}>10 320 сом</span></Table.Summary.Cell>
-            </Table.Summary.Row>
-          )}
         />
       </Modal>
     </div>
   );
+}
+
+function FactoryDashboard() {
+  const warehouses = [
+    { name: "Бишкек - Главный", stock: "12 450", debt: "350 000", cash: "1 200 000" },
+    { name: "Ош - Региональный", stock: "8 200", debt: "120 000", cash: "450 000" },
+    { name: "Джалал-Абад", stock: "5 100", debt: "45 000", cash: "230 000" },
+    { name: "Каракол", stock: "3 400", debt: "15 000", cash: "180 000" },
+    { name: "Нарын", stock: "1 800", debt: "8 000", cash: "90 000" },
+    { name: "Баткен", stock: "2 100", debt: "12 000", cash: "110 000" },
+    { name: "Талас", stock: "2 500", debt: "5 000", cash: "140 000" },
+  ];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <Title level={2} style={{ margin: 0, fontSize: "28px", fontWeight: 700 }}>Сводка по складам</Title>
+      <Row gutter={[16, 16]}>
+        {warehouses.map((wh, index) => (
+          <Col xs={24} sm={12} lg={8} xl={6} key={index}>
+            <Card bordered={false} style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
+              <Title level={4} style={{ marginTop: 0, marginBottom: 16 }}>{wh.name}</Title>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text type="secondary">Остаток товара</Text>
+                  <Text strong>{wh.stock} шт</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text type="secondary">Долг складу</Text>
+                  <Text strong style={{ color: PALETTE.error }}>{wh.debt} сом</Text>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Text type="secondary">Касса</Text>
+                  <Text strong style={{ color: PALETTE.success }}>{wh.cash} сом</Text>
+                </div>
+              </div>
+            </Card>
+          </Col>
+        ))}
+      </Row>
+    </div>
+  );
+}
+
+import { useUserStore } from '../store/useUserStore';
+import { UserRole } from '../types/enums';
+
+export default function DashboardPage() {
+  const { user } = useUserStore();
+  const isFactory = user?.role === UserRole.Factory;
+
+  return isFactory ? <FactoryDashboard /> : <WarehouseDashboard />;
 }

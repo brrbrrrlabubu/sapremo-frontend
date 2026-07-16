@@ -1,12 +1,11 @@
-import { useState } from 'react';
-import { Card, Typography, Table, Tag, Button, Space, Modal, Form, Input, Popconfirm } from 'antd';
+import { useState, useEffect } from 'react';
+import { Card, Typography, Table, Button, Space, Modal, Form, Input, message } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { 
   PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  ExclamationCircleFilled
+  EditOutlined
 } from '@ant-design/icons';
+import { DriverService } from '../services/driver.service';
 
 const { Title, Text } = Typography;
 
@@ -16,12 +15,29 @@ export default function DriversPage() {
   const [form] = Form.useForm();
   const { t } = useTranslation();
 
-  const dataSource = [
-    { id: 1, name: "Иванов Иван Иванович", plate: "01 KG 123 ABC", phone: "+996 555 123 456", debt: "15 000" },
-    { id: 2, name: "Иванов Иван Иванович", plate: "01 KG 123 ABC", phone: "+996 555 123 456", debt: t('drivers.noDebt') },
-    { id: 3, name: "Иванов Иван Иванович", plate: "01 KG 123 ABC", phone: "+996 555 123 456", debt: "145000", critical: true },
-    { id: 4, name: "Иванов Иван Иванович", plate: "01 KG 123 ABC", phone: "+996 555 123 456", debt: "15 000" },
-  ];
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  const fetchDrivers = async (currentPage = 1) => {
+    setLoading(true);
+    try {
+      const data = await DriverService.getDrivers({ page: currentPage - 1, size: pageSize });
+      setDrivers(data.content || []);
+      setTotal(data.totalElements || 0);
+    } catch (error) {
+      console.error('Failed to fetch drivers:', error);
+      message.error(t('common.error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDrivers(page);
+  }, [page]);
 
   const handleAdd = () => {
     setModalMode('add');
@@ -32,20 +48,39 @@ export default function DriversPage() {
   const handleEdit = (record: any) => {
     setModalMode('edit');
     form.setFieldsValue({
-      name: record.name,
-      plate: record.plate,
+      fullName: record.fullName,
+      carNumber: record.carNumber,
       phone: record.phone,
-      debt: record.debt === t('drivers.noDebt') || record.debt === 'Нет долга' ? '' : record.debt.replace(/\s/g, '')
     });
     setIsModalOpen(true);
   };
 
+  const onFinish = async (values: any) => {
+    try {
+      if (modalMode === 'add') {
+        await DriverService.createDriver({
+          ...values,
+          password: 'password123', // Временный пароль по умолчанию
+        });
+        message.success(t('common.success'));
+        setIsModalOpen(false);
+        fetchDrivers(page);
+      } else {
+        // Редактирование пока не реализовано в API водителе-менеджера
+        message.info('Редактирование пока недоступно');
+      }
+    } catch (error) {
+      console.error('Failed to save driver:', error);
+      message.error(t('common.error'));
+    }
+  };
+
   const columns = [
-    { title: t('drivers.nameCol'), dataIndex: 'name', key: 'name' },
+    { title: t('drivers.nameCol'), dataIndex: 'fullName', key: 'fullName' },
     { 
       title: t('drivers.plateCol'), 
-      dataIndex: 'plate', 
-      key: 'plate',
+      dataIndex: 'carNumber', 
+      key: 'carNumber',
       render: (text: string) => (
         <span style={{ background: 'var(--color-bg-layout, #f5f5f5)', padding: '4px 8px', borderRadius: '4px', fontSize: '13px', color: 'var(--color-text-secondary, #595959)', border: '1px solid var(--color-border, #e8e8e8)' }}>
           {text}
@@ -54,35 +89,11 @@ export default function DriversPage() {
     },
     { title: t('drivers.phoneCol'), dataIndex: 'phone', key: 'phone' },
     { 
-      title: t('drivers.currentDebtCol'), 
-      dataIndex: 'debt', 
-      key: 'debt',
-      render: (text: string, record: any) => {
-        if (text === t('drivers.noDebt') || text === 'Нет долга') {
-          return <Tag color="success" style={{ borderRadius: '4px', padding: '2px 8px' }}>{t('drivers.noDebt')}</Tag>;
-        }
-        if (record.critical) {
-          return <span style={{ color: '#ff4d4f' }}>{text}</span>;
-        }
-        return <span>{text}</span>;
-      }
-    },
-    { 
       title: t('common.actions'), 
       key: 'action',
       render: (_: any, record: any) => (
         <Space size="small">
           <Button icon={<EditOutlined />} size="small" style={{ borderRadius: '6px' }} onClick={() => handleEdit(record)}>{t('common.edit')}</Button>
-          <Popconfirm
-            title={t('drivers.deleteConfirm')}
-            description={t('common.deleteWarning')}
-            icon={<ExclamationCircleFilled style={{ color: '#faad14' }} />}
-            okText={t('common.delete')}
-            cancelText={t('common.cancel')}
-            okButtonProps={{ danger: true }}
-          >
-            <Button danger icon={<DeleteOutlined />} size="small" style={{ borderRadius: '6px' }} />
-          </Popconfirm>
         </Space>
       )
     },
@@ -101,10 +112,13 @@ export default function DriversPage() {
       <Card bordered={false} style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }} styles={{ body: { padding: 0 } }}>
         <Table 
           columns={columns} 
-          dataSource={dataSource} 
+          dataSource={drivers} 
+          loading={loading}
           pagination={{
-            total: 1240,
-            pageSize: 4,
+            current: page,
+            total: total,
+            pageSize: pageSize,
+            onChange: (p) => setPage(p),
             showSizeChanger: false,
             showTotal: (total, range) => t('common.shown', { from: range[0], to: range[1], total: total.toLocaleString() })
           }} 
@@ -121,26 +135,22 @@ export default function DriversPage() {
           <Button key="back" onClick={() => setIsModalOpen(false)}>
             {t('common.cancel')}
           </Button>,
-          <Button key="submit" type="primary" onClick={() => { form.submit(); setIsModalOpen(false); }}>
+          <Button key="submit" type="primary" onClick={() => form.submit()}>
             {t('common.save')}
           </Button>,
         ]}
       >
-        <Form form={form} layout="vertical" style={{ marginTop: 24 }}>
-          <Form.Item label={t('drivers.nameLabel')} name="name" rules={[{ required: true, message: t('drivers.nameRequired') }]}>
+        <Form form={form} layout="vertical" onFinish={onFinish} style={{ marginTop: 24 }}>
+          <Form.Item label={t('drivers.nameLabel')} name="fullName" rules={[{ required: true, message: t('drivers.nameRequired') }]}>
             <Input />
           </Form.Item>
           
-          <Form.Item label={t('drivers.plateLabel')} name="plate" rules={[{ required: true, message: t('drivers.plateRequired') }]}>
+          <Form.Item label={t('drivers.plateLabel')} name="carNumber" rules={[{ required: true, message: t('drivers.plateRequired') }]}>
             <Input />
           </Form.Item>
 
           <Form.Item label={t('drivers.phoneLabel')} name="phone" rules={[{ required: true, message: t('drivers.phoneRequired') }]}>
             <Input />
-          </Form.Item>
-
-          <Form.Item label={t('drivers.initialDebtLabel')} name="debt">
-            <Input addonAfter={t('common.som')} type="number" />
           </Form.Item>
         </Form>
       </Modal>

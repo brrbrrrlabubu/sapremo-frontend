@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, Typography, Table, Tag, Button, Select, Space, App } from 'antd';
+import { Card, Typography, Table, Tag, Button, Select, Space, App, Form, Input, Row, Col } from 'antd';
 import { 
   FilePdfOutlined,
   PrinterOutlined,
-  CheckOutlined
+  CheckOutlined,
+  SendOutlined
 } from '@ant-design/icons';
 import { PALETTE } from '../theme/tokens';
 import { ShipmentService } from '../services/shipment.service';
 import type { Shipment } from '../types/api.types';
+import { useUserStore } from '../store/useUserStore';
+import { UserRole } from '../types/enums';
 
 const { Title } = Typography;
 
@@ -20,8 +23,13 @@ export default function ShipmentPage() {
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+  
+  const { user } = useUserStore();
+  const isFactory = user?.role === UserRole.Factory;
+  const [form] = Form.useForm();
 
   const loadData = async (page: number) => {
+    if (isFactory) return;
     setLoading(true);
     try {
       const res = await ShipmentService.getShipments(page, pageSize);
@@ -64,7 +72,7 @@ export default function ShipmentPage() {
 
   useEffect(() => {
     loadData(currentPage);
-  }, [currentPage]);
+  }, [currentPage, isFactory]);
 
   const columns = [
     { title: t('shipment.dateCol'), dataIndex: 'date', key: 'date' },
@@ -112,6 +120,56 @@ export default function ShipmentPage() {
       )
     },
   ];
+
+  if (isFactory) {
+    return (
+      <Card bordered={false} style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
+        <Title level={4} style={{ marginTop: 0, marginBottom: 24 }}>Оформление отгрузки на склад</Title>
+        <Form form={form} layout="vertical" onFinish={() => message.success('Отгрузка успешно создана!')}>
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item label="Склад назначения" name="warehouse" rules={[{ required: true, message: 'Выберите склад' }]}>
+                <Select placeholder="Выберите склад">
+                  <Select.Option value="1">Бишкек - Главный</Select.Option>
+                  <Select.Option value="2">Ош - Региональный</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item label="Номер машины" name="truck" rules={[{ required: true, message: 'Укажите машину' }]}>
+                <Input placeholder="Например: B 1234 AB" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item label="Товар" name="product" rules={[{ required: true, message: 'Выберите товар' }]}>
+                <Select placeholder="Выберите товар">
+                  <Select.Option value="p1">Пломбир «Сливочный»</Select.Option>
+                  <Select.Option value="p2">Эскимо</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item label="Количество (шт/кор)" name="qty" rules={[{ required: true, message: 'Укажите количество' }]}>
+                <Input type="number" placeholder="Например: 100" />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item label="Комментарий" name="comment">
+                <Input.TextArea rows={3} placeholder="Необязательный комментарий..." />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item>
+                <Button type="primary" htmlType="submit" icon={<SendOutlined />} size="large" style={{ borderRadius: '6px' }}>
+                  Отправить отгрузку
+                </Button>
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Card>
+    );
+  }
 
   return (
     <>

@@ -12,6 +12,9 @@ import WarehouseRequestsPage from "../pages/WarehouseRequestsPage";
 import DriversPage from "../pages/DriversPage";
 import DriverRequestsPage from "../pages/DriverRequestsPage";
 import FactoryOperationsPage from "../pages/FactoryOperationsPage";
+import ReceivingPage from "../pages/ReceivingPage";
+import ShipmentsPage from "../pages/ShipmentPage";
+import ReturnsPage from "../pages/ReturnsPage";
 
 const router = createBrowserRouter([
   {
@@ -29,6 +32,9 @@ const router = createBrowserRouter([
           { path: "/analytics", element: <AnalyticsPage /> },
           { path: "/reports", element: <ReportsPage /> },
           { path: "/drivers", element: <DriversPage /> },
+          { path: "/receiving", element: <ReceivingPage /> },
+          { path: "/shipments", element: <ShipmentsPage /> },
+          { path: "/returns", element: <ReturnsPage /> },
         ],
       },
       {

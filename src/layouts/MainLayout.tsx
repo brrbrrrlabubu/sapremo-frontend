@@ -13,7 +13,8 @@ import {
   BarChartOutlined,
   UserOutlined,
   LogoutOutlined,
-  SearchOutlined
+  SearchOutlined,
+  ShopOutlined
 } from "@ant-design/icons";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { ThemeLangSelector } from "../components/ThemeLangSelector";
@@ -21,6 +22,7 @@ import { useUserStore } from "../store/useUserStore";
 import { useUIStore } from "../store/useUIStore";
 import { AuthService } from "../services/auth.service";
 import { setNavigate } from "../api/axiosClient";
+import { setDriverNavigate } from "../api/driverAxiosClient";
 import { PALETTE } from "../theme/tokens";
 import { useState, useEffect } from "react";
 import sapremoLogo from "../assets/sapremo.jpg";
@@ -41,6 +43,7 @@ export default function MainLayout() {
 
   useEffect(() => {
     setNavigate(navigate);
+    setDriverNavigate(navigate);
   }, [navigate]);
 
   const handleLogout = async () => {
@@ -73,17 +76,24 @@ export default function MainLayout() {
     }
   ];
 
-  const isFactoryOrAdmin = user?.role === UserRole.Admin || user?.role === UserRole.Factory;
+  const r = user?.role;
+  const isAdmin = r === UserRole.Admin;
+  const isFactory = r === UserRole.Factory || isAdmin;
+  const isManager = r === UserRole.Manager || isAdmin;
+  const isAccountant = r === UserRole.Accountant || isAdmin;
 
   const menuItems = [
     { key: "/", icon: <DashboardOutlined />, label: <Link to="/">{t('menu.dashboard')}</Link> },
-    { key: "/warehouses", icon: <ShoppingOutlined />, label: <Link to="/warehouses">{t('menu.products')}</Link> },
-    { key: "/drivers", icon: <CarOutlined />, label: <Link to="/drivers">{t('menu.drivers')}</Link> },
-    { key: "/driver-requests", icon: <FileTextOutlined />, label: <Link to="/driver-requests">{t('menu.driverRequests')}</Link> },
-    { key: "/requests", icon: <FileTextOutlined />, label: <Link to="/requests">{t('menu.requests')}</Link> },
-    ...(isFactoryOrAdmin ? [{ key: "/factory", icon: <ImportOutlined />, label: <Link to="/factory">{t('menu.factory', 'Завод')}</Link> }] : []),
-    { key: "/finance", icon: <WalletOutlined />, label: <Link to="/finance">{t('menu.finance')}</Link> },
-    { key: "/reports", icon: <BarChartOutlined />, label: <Link to="/reports">{t('menu.reports')}</Link> },
+    ...(isManager ? [{ key: "/warehouses", icon: <ShoppingOutlined />, label: <Link to="/warehouses">{t('menu.products')}</Link> }] : []),
+    ...(isManager ? [{ key: "/drivers", icon: <CarOutlined />, label: <Link to="/drivers">{t('menu.drivers')}</Link> }] : []),
+    ...(isManager ? [{ key: "/driver-requests", icon: <FileTextOutlined />, label: <Link to="/driver-requests">{t('menu.driverRequests')}</Link> }] : []),
+    ...(isManager ? [{ key: "/requests", icon: <FileTextOutlined />, label: <Link to="/requests">{t('menu.requests')}</Link> }] : []),
+    ...(isFactory ? [{ key: "/factory", icon: <ShopOutlined />, label: <Link to="/factory">{t('menu.factory', 'Склад')}</Link> }] : []),
+    ...(isManager ? [{ key: "/receiving", icon: <ImportOutlined />, label: <Link to="/receiving">{t('menu.receiving')}</Link> }] : []),
+    ...(isManager ? [{ key: "/shipments", icon: <ExportOutlined />, label: <Link to="/shipments">{t('menu.shipments')}</Link> }] : []),
+    ...(isManager ? [{ key: "/returns", icon: <UndoOutlined />, label: <Link to="/returns">{t('menu.returns')}</Link> }] : []),
+    ...(isFactory || isAccountant || isManager ? [{ key: "/finance", icon: <WalletOutlined />, label: <Link to="/finance">{t('menu.finance')}</Link> }] : []),
+    ...(isManager || isAccountant ? [{ key: "/reports", icon: <BarChartOutlined />, label: <Link to="/reports">{t('menu.reports')}</Link> }] : []),
   ];
 
   return (
@@ -202,8 +212,8 @@ export default function MainLayout() {
           <Outlet />
         </Content>
 
-        <Footer style={{ 
-          textAlign: 'left', 
+        <Footer style={{
+          textAlign: 'left',
           background: 'var(--color-bg-container, #ffffff)',
           borderTop: '1px solid var(--color-border, #f0f0f0)',
           padding: '16px 24px',

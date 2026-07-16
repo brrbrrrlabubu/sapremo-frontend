@@ -13,7 +13,7 @@ const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
 
-export default function FinancePage() {
+function WarehouseFinance() {
   const [activeTab, setActiveTab] = useState('income');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
@@ -243,4 +243,44 @@ export default function FinancePage() {
       </Modal>
     </div>
   );
+}
+
+function FactoryFinance() {
+  const data = [
+    { id: 1, warehouse: "Бишкек - Главный", date: "20.06.2026", amount: "50 000 сом", debt: "350 000 сом" },
+    { id: 2, warehouse: "Ош - Региональный", date: "18.06.2026", amount: "120 000 сом", debt: "120 000 сом" },
+    { id: 3, warehouse: "Джалал-Абад", date: "15.06.2026", amount: "20 000 сом", debt: "45 000 сом" },
+  ];
+
+  const columns = [
+    { title: "Склад", dataIndex: 'warehouse', key: 'warehouse', render: (text: string) => <span style={{ fontWeight: 500 }}>{text}</span> },
+    { title: "Дата последней оплаты", dataIndex: 'date', key: 'date' },
+    { title: "Сумма оплаты", dataIndex: 'amount', key: 'amount', render: (text: string) => <span style={{ color: PALETTE.success, fontWeight: 600 }}>+{text}</span> },
+    { title: "Текущий долг", dataIndex: 'debt', key: 'debt', render: (text: string) => <span style={{ color: PALETTE.error, fontWeight: 600 }}>{text}</span> },
+  ];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <Title level={2} style={{ margin: 0, fontSize: "28px", fontWeight: 700 }}>История оплат и долги складов</Title>
+      <Card bordered={false} style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }} styles={{ body: { padding: 0 } }}>
+        <Table 
+          columns={columns} 
+          dataSource={data} 
+          pagination={false} 
+          rowKey="id" 
+          style={{ padding: "24px" }}
+        />
+      </Card>
+    </div>
+  );
+}
+
+import { useUserStore } from '../store/useUserStore';
+import { UserRole } from '../types/enums';
+
+export default function FinancePage() {
+  const { user } = useUserStore();
+  const isFactory = user?.role === UserRole.Factory;
+
+  return isFactory ? <FactoryFinance /> : <WarehouseFinance />;
 }

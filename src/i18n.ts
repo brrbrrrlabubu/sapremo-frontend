@@ -45,6 +45,8 @@ const resources = {
         selectDate: 'Выберите дату',
         enterQuantity: 'Введите количество',
         selectProduct: 'Выберите товар',
+        success: 'Успешно',
+        error: 'Ошибка',
       },
       // ─── Статусы ────────────────────────────────────────────────────────
       statuses: {
@@ -315,6 +317,10 @@ const resources = {
         noDebt: 'Нет долга',
         statusCol: 'Статус',
         actionsCol: 'Действия',
+        editDriver: 'Редактировать водителя',
+        nameLabel: 'ФИО',
+        plateLabel: 'Госномер',
+        phoneLabel: 'Телефон',
       },
       // ─── Заявки водителей ───────────────────────────────────────────────
       driverRequests: {
@@ -382,6 +388,8 @@ const resources = {
         selectDate: 'Select date',
         enterQuantity: 'Enter quantity',
         selectProduct: 'Select product',
+        success: 'Success',
+        error: 'Error',
       },
       // ─── Statuses ───────────────────────────────────────────────────────
       statuses: {
@@ -645,6 +653,10 @@ const resources = {
         noDebt: 'No debt',
         statusCol: 'Status',
         actionsCol: 'Actions',
+        editDriver: 'Edit driver',
+        nameLabel: 'Full name',
+        plateLabel: 'License plate',
+        phoneLabel: 'Phone number',
       },
       // ─── Driver Requests ────────────────────────────────────────────────
       driverRequests: {

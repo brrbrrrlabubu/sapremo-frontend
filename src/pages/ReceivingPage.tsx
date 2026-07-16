@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, Typography, Table, Tag, Button, Modal, Form, Input, DatePicker, Select, App } from 'antd';
+import { Card, Table, Tag, Button, Modal, Form, Input, DatePicker, Select, App } from 'antd';
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { ReceptionService } from '../services/reception.service';
 import type { Reception } from '../types/api.types';
-
-const { Title } = Typography;
+import { useUserStore } from '../store/useUserStore';
+import { UserRole } from '../types/enums';
 
 export default function ReceivingPage() {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
+  const { user } = useUserStore();
+
+  const isFactory = user?.role === UserRole.Factory;
 
   const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
@@ -102,7 +105,9 @@ export default function ReceivingPage() {
         extra={
           <div style={{ display: 'flex', gap: 12 }}>
             <Button icon={<ReloadOutlined />} onClick={() => loadData(currentPage)} />
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>{t('receiving.newReception')}</Button>
+            {!isFactory && (
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>{t('receiving.newReception')}</Button>
+            )}
           </div>
         }
       >
@@ -123,40 +128,42 @@ export default function ReceivingPage() {
         />
       </Card>
 
-      <Modal
-        title={t('receiving.modalTitle')}
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        footer={[
-          <Button key="back" onClick={() => setIsModalOpen(false)}>
-            {t('common.cancel')}
-          </Button>,
-          <Button key="submit" type="primary" onClick={() => { form.submit(); setIsModalOpen(false); }}>
-            {t('common.save')}
-          </Button>,
-        ]}
-      >
-        <Form form={form} layout="vertical" style={{ marginTop: 24 }}>
-          <Form.Item label={t('receiving.dateCol')} name="date" rules={[{ required: true, message: t('common.selectDate') }]}>
-            <DatePicker style={{ width: '100%' }} format="DD.MM.YYYY" />
-          </Form.Item>
-          
-          <Form.Item label={t('receiving.batchNumber')} name="batch" rules={[{ required: true, message: t('receiving.enterBatch') }]}>
-            <Input placeholder={t('receiving.batchPlaceholder')} />
-          </Form.Item>
+      {!isFactory && (
+        <Modal
+          title={t('receiving.modalTitle')}
+          open={isModalOpen}
+          onCancel={() => setIsModalOpen(false)}
+          footer={[
+            <Button key="back" onClick={() => setIsModalOpen(false)}>
+              {t('common.cancel')}
+            </Button>,
+            <Button key="submit" type="primary" onClick={() => { form.submit(); setIsModalOpen(false); }}>
+              {t('common.save')}
+            </Button>,
+          ]}
+        >
+          <Form form={form} layout="vertical" style={{ marginTop: 24 }}>
+            <Form.Item label={t('receiving.dateCol')} name="date" rules={[{ required: true, message: t('common.selectDate') }]}>
+              <DatePicker style={{ width: '100%' }} format="DD.MM.YYYY" />
+            </Form.Item>
+            
+            <Form.Item label={t('receiving.batchNumber')} name="batch" rules={[{ required: true, message: t('receiving.enterBatch') }]}>
+              <Input placeholder={t('receiving.batchPlaceholder')} />
+            </Form.Item>
 
-          <Form.Item label={t('receiving.productCol')} name="product" rules={[{ required: true, message: t('common.selectProduct') }]}>
-            <Select placeholder={t('common.selectProduct')}>
-              <Select.Option value="plombir">Пломбир «Сливочный» 80г</Select.Option>
-              <Select.Option value="eskimo">Эскимо в шоколаде</Select.Option>
-            </Select>
-          </Form.Item>
+            <Form.Item label={t('receiving.productCol')} name="product" rules={[{ required: true, message: t('common.selectProduct') }]}>
+              <Select placeholder={t('common.selectProduct')}>
+                <Select.Option value="plombir">Пломбир «Сливочный» 80г</Select.Option>
+                <Select.Option value="eskimo">Эскимо в шоколаде</Select.Option>
+              </Select>
+            </Form.Item>
 
-          <Form.Item label={t('receiving.quantityLabel')} name="quantity" rules={[{ required: true, message: t('common.enterQuantity') }]}>
-            <Input type="number" />
-          </Form.Item>
-        </Form>
-      </Modal>
+            <Form.Item label={t('receiving.quantityLabel')} name="quantity" rules={[{ required: true, message: t('common.enterQuantity') }]}>
+              <Input type="number" />
+            </Form.Item>
+          </Form>
+        </Modal>
+      )}
     </>
   );
 }

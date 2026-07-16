@@ -19,6 +19,11 @@ export default function App() {
     i18n.changeLanguage(lang);
   }, [lang, i18n]);
 
+  // Синхронизируем тему с HTML-тегом для работы CSS-переменных
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
   // Выбираем локаль для компонентов Ant Design
   const currentLocale = lang === "ru" ? ruRU : enUS;
   const tTheme = themed(theme === "dark");
