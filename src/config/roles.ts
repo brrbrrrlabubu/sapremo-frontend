@@ -4,6 +4,7 @@ export const UserRole = {
   FACTORY: 'factory',
   MANAGER: 'manager',
   ACCOUNTANT: 'accountant',
+  Director: 'director',
 } as const;
 
 export type UserRoleType = typeof UserRole[keyof typeof UserRole];
@@ -12,4 +13,5 @@ export const PERMISSIONS = {
   CAN_EXPORT_EXCEL: [UserRole.ADMIN, UserRole.MANAGER, UserRole.ACCOUNTANT],
   CAN_VIEW_FINANCE: [UserRole.ADMIN, UserRole.ACCOUNTANT],
   CAN_MANAGE_SHIPMENTS: [UserRole.ADMIN, UserRole.FACTORY],
+  CAN_VIEW_ANALYTICS: [UserRole.ADMIN, UserRole.MANAGER],
 } as const;

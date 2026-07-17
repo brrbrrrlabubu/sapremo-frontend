@@ -5,6 +5,7 @@ import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { PALETTE } from '../theme/tokens';
 import { WarehouseOrderService } from '../services/warehouseOrder.service';
 import type { WarehouseOrder } from '../types/api.types';
+import { useAccess } from '../hooks/useAccess';
 
 const { Title } = Typography;
 const { TextArea } = Input;
@@ -15,6 +16,7 @@ export default function WarehouseRequestsPage() {
   const [form] = Form.useForm();
 
   const { message } = App.useApp();
+  const { canManageWarehouse } = useAccess();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
@@ -116,7 +118,12 @@ export default function WarehouseRequestsPage() {
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
           <Button icon={<ReloadOutlined />} size="large" style={{ borderRadius: '6px' }} onClick={() => loadData(currentPage)} />
-          <Button type="primary" icon={<PlusOutlined />} size="large" style={{ borderRadius: '6px' }} onClick={() => setIsModalOpen(true)}>{t('warehouseRequests.createRequest')}</Button>
+            {canManageWarehouse && (
+              <Button type="primary" icon={<PlusOutlined />} size="large" style={{ borderRadius: '6px' }} onClick={() => setIsModalOpen(true)}
+             >
+          {t('warehouseRequests.createRequest')}
+        </Button>
+       )}
         </div>
       </div>
 

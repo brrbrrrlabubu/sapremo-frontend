@@ -84,6 +84,7 @@ const resources = {
         finance: 'Касса',
         returns: 'Возвраты',
         reports: 'Отчёты',
+        analytics: 'Аналитика',
       },
       // ─── Логин ──────────────────────────────────────────────────────────
       login: {
@@ -427,6 +428,7 @@ const resources = {
         finance: 'Finance',
         returns: 'Returns',
         reports: 'Reports',
+        analytics: 'Analytics',
       },
       // ─── Login ──────────────────────────────────────────────────────────
       login: {

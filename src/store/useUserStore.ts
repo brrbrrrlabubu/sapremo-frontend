@@ -16,7 +16,6 @@ interface UserStore {
   /** Вызывается после успешного логина: синхронизирует флаг авторизации с токеном в localStorage */
   syncAuthFromStorage: () => void
 }
-
 export const useUserStore = create<UserStore>()(
   persist(
     (set) => ({
@@ -38,5 +37,6 @@ export const useUserStore = create<UserStore>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ user: state.user }), // Persist only user object
     }
+    
   )
 )

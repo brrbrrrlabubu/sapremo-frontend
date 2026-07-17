@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { DriverService } from '../services/driver.service';
 import { ProductService } from '../services/product.service';
+import { useAccess } from '../hooks/useAccess';
 
 export default function ReturnsPage() {
   const { t } = useTranslation();
@@ -13,6 +14,7 @@ export default function ReturnsPage() {
   const [page, setPage] = useState(1);
   const [productsMap, setProductsMap] = useState<Record<string, any>>({});
   const pageSize = 10;
+  const { canManageWarehouse } = useAccess();
 
   const fetchProducts = async () => {
     try {
@@ -134,7 +136,7 @@ export default function ReturnsPage() {
       title: t('common.actions'),
       key: 'actions',
       render: (_: any, record: any) => {
-        if (record.status !== 'PENDING') return null;
+        if (record.status !== 'PENDING' || !canManageWarehouse) return null;
         return (
           <Space>
             <Popconfirm title="Принять возврат?" onConfirm={() => handleAction(record.id, 'accept')}>

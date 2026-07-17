@@ -8,7 +8,6 @@ import ProtectedRoute from "../components/ProtectedRoute";
 import LoginPage from "../pages/LoginPage";
 import AnalyticsPage from "../pages/AnalyticsPage";
 import ReportsPage from "../pages/ReportsPage";
-import InventoryPage from "../pages/InventoryPage";
 import WarehouseRequestsPage from "../pages/WarehouseRequestsPage";
 import DriversPage from "../pages/DriversPage";
 import DriverRequestsPage from "../pages/DriverRequestsPage";
@@ -29,7 +28,6 @@ const router = createBrowserRouter([
           { index: true, element: <DashboardPage /> },
           { path: "shipments", element: <ShipmentsPage /> },
           { path: "warehouses", element: <WarehousePage /> },
-          { path: "inventory", element: <InventoryPage /> },
           { path: "requests", element: <WarehouseRequestsPage /> },
           { path: "driver-requests", element: <DriverRequestsPage /> },
           { path: "drivers", element: <DriversPage /> },
@@ -39,7 +37,7 @@ const router = createBrowserRouter([
       },
       // Пути для финансов и аналитики (Админ и Бухгалтер)
       {
-        element: <ProtectedRoute allowedRoles={[UserRole.Admin, UserRole.Accountant]} />,
+        element: <ProtectedRoute allowedRoles={[UserRole.Admin, UserRole.Accountant, UserRole.Factory, UserRole.Manager]} />,
         children: [
           { path: "finance", element: <FinancePage /> },
           { path: "analytics", element: <AnalyticsPage /> },

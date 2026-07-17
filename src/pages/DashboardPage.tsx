@@ -4,8 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { InboxOutlined, FallOutlined, WalletOutlined, BankOutlined } from '@ant-design/icons';
 import { StatsService } from '../services/stats.service';
 import { DriverService } from '../services/driver.service';
-import { useUserStore } from '../store/useUserStore';
-import { UserRole } from '../types/enums';
+import { useAccess } from '../hooks/useAccess';
 
 const { Text, Title } = Typography;
 function WarehouseDashboard() {
@@ -58,13 +57,18 @@ function WarehouseDashboard() {
 }
 
 export default function DashboardPage() {
-  const { user } = useUserStore();
-  const isFactory = user?.role === UserRole.Factory;
+ const { isFactory } = useAccess();
 
   // Если нужно вернуть компоненты для каждой роли:
   return (
     <div style={{ padding: '24px' }}>
-      {isFactory ? <Title level={2}>Factory View</Title> : <WarehouseDashboard />}
+      {isFactory ? (<div style={{ textAlign: 'center', marginTop: '50px' }}>
+          <Title level={3}>Добро пожаловать, Завод!</Title>
+          <p>Используйте меню слева для работы с приёмкой и отгрузкой.</p>
+        </div>
+      ) : (
+        <WarehouseDashboard />
+      )}
     </div>
   );
 }

@@ -9,8 +9,7 @@ import {
 } from '@ant-design/icons';
 import { ShipmentService } from '../services/shipment.service';
 import type { Shipment } from '../types/api.types';
-import { useUserStore } from '../store/useUserStore';
-import { UserRole } from '../types/enums';
+import { useAccess } from '../hooks/useAccess';
 
 const { Title } = Typography;
 
@@ -23,12 +22,10 @@ export default function ShipmentPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
   
-  const { user } = useUserStore();
-  const isFactory = user?.role === UserRole.Factory;
+  const { isFactory, canManageWarehouse } = useAccess(); 
   const [form] = Form.useForm();
 
   const loadData = async (page: number) => {
-    if (isFactory) return;
     setLoading(true);
     try {
       const res = await ShipmentService.getShipments(page, pageSize);
@@ -93,55 +90,59 @@ export default function ShipmentPage() {
       key: 'action',
       render: () => (
         <Space size="small">
-          <Button icon={<FilePdfOutlined />} size="small" />
-          <Button icon={<PrinterOutlined />} size="small" />
+          {canManageWarehouse && (
+            <>
+              <Button icon={<FilePdfOutlined />} size="small" />
+              <Button icon={<PrinterOutlined />} size="small" />
+            </>
+          )}
           <Button type="primary" icon={<CheckOutlined />} size="small">{t('shipment.issue')}</Button>
         </Space>
       )
     },
   ];
 
-  if (isFactory) {
-    return (
-      <Card bordered={false} style={{ borderRadius: '8px' }}>
-        <Title level={4} style={{ marginTop: 0 }}>{t('shipment.factoryTitle')}</Title>
-        <Form form={form} layout="vertical" onFinish={() => message.success(t('shipment.created'))}>
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item label={t('shipment.warehouseLabel')} name="warehouse" rules={[{ required: true }]}>
-                <Select placeholder={t('shipment.selectWarehouse')} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item label={t('shipment.truckLabel')} name="truck" rules={[{ required: true }]}>
-                <Input placeholder="B 1234 AB" />
-              </Form.Item>
-            </Col>
-            <Col xs={24}>
-              <Button type="primary" htmlType="submit" icon={<SendOutlined />} size="large">
-                {t('shipment.submitBtn')}
-              </Button>
-            </Col>
-          </Row>
-        </Form>
-      </Card>
-    );
-  }
-
   return (
-    <Card bordered={false} style={{ borderRadius: '8px' }}>
-      <Table 
-        columns={columns} 
-        dataSource={data} 
-        loading={loading}
-        pagination={{
-          current: currentPage,
-          total: total,
-          pageSize: pageSize,
-          onChange: (page) => setCurrentPage(page),
-        }} 
-        rowKey="id" 
-      />
-    </Card>
+    <div style={{ padding: '24px' }}>
+      {isFactory && (
+        <Card bordered={false} style={{ borderRadius: '8px', marginBottom: '24px' }}>
+          <Title level={4} style={{ marginTop: 0 }}>{t('shipment.factoryTitle')}</Title>
+          <Form form={form} layout="vertical" onFinish={() => message.success(t('shipment.created'))}>
+            <Row gutter={16}>
+              <Col xs={24} md={12}>
+                <Form.Item label={t('shipment.warehouseLabel')} name="warehouse" rules={[{ required: true }]}>
+                  <Select placeholder={t('shipment.selectWarehouse')} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item label={t('shipment.truckLabel')} name="truck" rules={[{ required: true }]}>
+                  <Input placeholder="B 1234 AB" />
+                </Form.Item>
+              </Col>
+              <Col xs={24}>
+                <Button type="primary" htmlType="submit" icon={<SendOutlined />} size="large">
+                  {t('shipment.submitBtn')}
+                </Button>
+              </Col>
+            </Row>
+          </Form>
+        </Card>
+      )}
+
+      <Card bordered={false} style={{ borderRadius: '8px' }}>
+        <Table 
+          columns={columns} 
+          dataSource={data} 
+          loading={loading}
+          pagination={{
+            current: currentPage,
+            total: total,
+            pageSize: pageSize,
+            onChange: (page) => setCurrentPage(page),
+          }} 
+          rowKey="id" 
+        />
+      </Card>
+    </div>
   );
 }

@@ -5,6 +5,8 @@ import { WarningOutlined } from '@ant-design/icons';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { PALETTE } from '../theme/tokens';
 import { ProductService } from '../services/product.service';
+import { RoleGuard } from '../components/RoleGuard';
+import { PERMISSIONS } from '../config/roles';
 
 const { Text } = Typography;
 
@@ -86,37 +88,39 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <Row gutter={[16, 16]}>
-        {kpis.map((item, index) => (
-          <Col xs={12} md={6} key={index}>
-            <Card bordered={false}>
-              <Text type="secondary">{item.title}</Text>
-              <div style={{ color: item.color, fontSize: "28px", fontWeight: 700 }}>{item.value}</div>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+    <RoleGuard allowedRoles={PERMISSIONS.CAN_VIEW_FINANCE}> {/* Или создай CAN_VIEW_ANALYTICS в roles.ts */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <Row gutter={[16, 16]}>
+          {kpis.map((item, index) => (
+            <Col xs={12} md={6} key={index}>
+              <Card bordered={false}>
+                <Text type="secondary">{item.title}</Text>
+                <div style={{ color: item.color, fontSize: "28px", fontWeight: 700 }}>{item.value}</div>
+              </Card>
+            </Col>
+          ))}
+        </Row>
 
-      <Card bordered={false}>
-        <div style={{ height: 300 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey={t('analytics.chartStock')} fill="#1890ff" />
-              <Bar dataKey={t('analytics.chartMinimum')} fill="#ffc069" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </Card>
+        <Card bordered={false}>
+          <div style={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey={t('analytics.chartStock')} fill="#1890ff" />
+                <Bar dataKey={t('analytics.chartMinimum')} fill="#ffc069" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
 
-      <Card bordered={false} styles={{ body: { padding: 0 } }}>
-        <Table columns={columns} dataSource={dataSource} loading={loading} pagination={false} rowKey="id" />
-      </Card>
-    </div>
+        <Card bordered={false} styles={{ body: { padding: 0 } }}>
+          <Table columns={columns} dataSource={dataSource} loading={loading} pagination={false} rowKey="id" />
+        </Card>
+      </div>
+    </RoleGuard>
   );
 }

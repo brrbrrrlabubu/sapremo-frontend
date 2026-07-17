@@ -81,6 +81,7 @@ export default function MainLayout() {
   const isFactory = r === UserRole.Factory || isAdmin;
   const isManager = r === UserRole.Manager || isAdmin;
   const isAccountant = r === UserRole.Accountant || isAdmin;
+  
 
   const menuItems = [
     { key: "/", icon: <DashboardOutlined />, label: <Link to="/">{t('menu.dashboard')}</Link> },
@@ -90,10 +91,11 @@ export default function MainLayout() {
     ...(isManager ? [{ key: "/requests", icon: <FileTextOutlined />, label: <Link to="/requests">{t('menu.requests')}</Link> }] : []),
     ...(isFactory ? [{ key: "/factory", icon: <ShopOutlined />, label: <Link to="/factory">{t('menu.factory', 'Склад')}</Link> }] : []),
     ...(isManager ? [{ key: "/receiving", icon: <ImportOutlined />, label: <Link to="/receiving">{t('menu.receiving')}</Link> }] : []),
-    ...(isManager ? [{ key: "/shipments", icon: <ExportOutlined />, label: <Link to="/shipments">{t('menu.shipments')}</Link> }] : []),
+    ...(isManager || isFactory ? [{ key: "/shipments", icon: <ExportOutlined />, label: <Link to="/shipments">{t('menu.shipments')}</Link> }] : []),
     ...(isManager ? [{ key: "/returns", icon: <UndoOutlined />, label: <Link to="/returns">{t('menu.returns')}</Link> }] : []),
-    ...(isFactory || isAccountant || isManager ? [{ key: "/finance", icon: <WalletOutlined />, label: <Link to="/finance">{t('menu.finance')}</Link> }] : []),
-    ...(isManager || isAccountant ? [{ key: "/reports", icon: <BarChartOutlined />, label: <Link to="/reports">{t('menu.reports')}</Link> }] : []),
+    ...(isAdmin || isAccountant || isManager ? [{ key: "/finance", icon: <WalletOutlined />, label: <Link to="/finance">{t('menu.finance')}</Link> }] : []),
+    ...(isAdmin || isAccountant ? [{ key: "/analytics", icon: <BarChartOutlined />, label: <Link to="/analytics">{t('menu.analytics')}</Link> }] : []),
+    ...(isAdmin || isAccountant ? [{ key: "/reports", icon: <FileTextOutlined />, label: <Link to="/reports">{t('menu.reports')}</Link> }] : []),
   ];
 
   return (

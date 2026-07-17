@@ -4,16 +4,13 @@ import { Card, Table, Tag, Button, Modal, Form, Input, DatePicker, Select, App }
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { ReceptionService } from '../services/reception.service';
 import type { Reception } from '../types/api.types';
-import { useUserStore } from '../store/useUserStore';
-import { UserRole } from '../types/enums';
+import { useAccess } from '../hooks/useAccess';
 
 export default function ReceivingPage() {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
-  const { user } = useUserStore();
-
-  const isFactory = user?.role === UserRole.Factory;
+  const { isFactory, canCreateReception } = useAccess();
 
   const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
@@ -105,10 +102,12 @@ export default function ReceivingPage() {
         extra={
           <div style={{ display: 'flex', gap: 12 }}>
             <Button icon={<ReloadOutlined />} onClick={() => loadData(currentPage)} />
-            {!isFactory && (
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>{t('receiving.newReception')}</Button>
+              {canCreateReception && (
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
+            {t('receiving.newReception')}
+          </Button>
             )}
-          </div>
+        </div>
         }
       >
         <Table 
@@ -128,7 +127,7 @@ export default function ReceivingPage() {
         />
       </Card>
 
-      {!isFactory && (
+      {canCreateReception && (
         <Modal
           title={t('receiving.modalTitle')}
           open={isModalOpen}

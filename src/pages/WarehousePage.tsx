@@ -9,11 +9,13 @@ import emptyIllustration from '../assets/Empty Products Illustration.png';
 
 import { ProductService } from '../services/product.service';
 import type { Product } from '../types/api.types';
+import { useAccess } from '../hooks/useAccess';
 
 const { Title, Text } = Typography;
 
 export default function WarehousePage() {
   const { t } = useTranslation();
+  const { isAdmin, isManager } = useAccess();
   const [appState, setAppState] = useState<'loading' | 'empty' | 'error' | 'success'>('loading');
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
@@ -66,6 +68,15 @@ export default function WarehousePage() {
         return <Tag color={color} style={{ borderRadius: '4px' }}>{label}</Tag>;
       }
     },
+    ...(isAdmin || isManager ? [{
+      title: t('common.actions'), 
+      key: 'actions',
+      render: (_: any, record: any) => (
+        <Button size="small" onClick={() => console.log('Редактировать', record.id)}>
+          {t('common.edit') || 'Редактировать'}
+        </Button>
+      ),
+    }] : []),
   ];
 
   if (appState === 'error') {
@@ -86,7 +97,14 @@ export default function WarehousePage() {
         <div>
           <Title level={2} style={{ margin: 0, fontSize: "28px" }}>{t('warehouse.title')}</Title>
         </div>
-        <Select defaultValue="all" style={{ width: 120 }} options={[{ value: 'all', label: t('common.all') }]} />
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {isAdmin && (
+            <Button type="primary">
+              {t('warehouse.addProduct') || 'Добавить товар'}
+            </Button>
+          )}
+          <Select defaultValue="all" style={{ width: 120 }} options={[{ value: 'all', label: t('common.all') }]} />
+        </div>
       </div>
 
       <Card bordered={false} style={{ borderRadius: '8px' }} styles={{ body: { padding: 0 } }}>

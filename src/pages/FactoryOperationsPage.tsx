@@ -5,10 +5,14 @@ import {
   ImportOutlined,
   ExportOutlined,
 } from '@ant-design/icons';
+import { useAccess } from '../hooks/useAccess';
 
 const { Title } = Typography;
 
 export default function FactoryOperationsPage() {
+  const { isAuthenticated, isLoading } = useAccess();
+  if (isLoading) return <div>Загрузка...</div>;
+  if (!isAuthenticated) return <div>Нужно войти в систему</div>;
   const items = [
     {
       key: '1',

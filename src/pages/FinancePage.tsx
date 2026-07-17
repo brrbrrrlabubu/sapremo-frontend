@@ -13,11 +13,12 @@ const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
 
-function WarehouseFinance() {
+function WarehouseFinance({ canManage }: { canManage: boolean }) {
   const [activeTab, setActiveTab] = useState('income');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
   const { t } = useTranslation();
+  
 
   const isExpense = activeTab === 'expense';
 
@@ -29,6 +30,7 @@ function WarehouseFinance() {
   const pageSize = 20;
 
   const [totalDebt, setTotalDebt] = useState<number>(0);
+  
 
   const loadData = async (page: number) => {
     setLoading(true);
@@ -171,16 +173,18 @@ function WarehouseFinance() {
             <RangePicker style={{ borderRadius: "6px" }} placeholder={[t('finance.startDate'), t('finance.endDate')]} />
             <Select placeholder={t('finance.paymentTypeFilter')} style={{ width: 150, borderRadius: "6px" }} />
           </div>
-          <Button 
-            type="primary" 
-            danger={isExpense} 
-            icon={<PlusOutlined />} 
-            style={{ borderRadius: "6px" }}
-            onClick={() => setIsModalOpen(true)}
-          >
-            {isExpense ? t('finance.newExpense') : t('finance.newIncome')}
-          </Button>
-        </div>
+          {canManage && (
+            <Button 
+              type="primary" 
+              danger={isExpense} 
+              icon={<PlusOutlined />} 
+              style={{ borderRadius: "6px" }}
+              onClick={() => setIsModalOpen(true)}
+            >
+              {isExpense ? t('finance.newExpense') : t('finance.newIncome')}
+            </Button>
+          )}
+          </div>
 
         <Table 
           columns={isExpense ? expenseColumns : (incomeColumns as any)} 
@@ -282,5 +286,6 @@ export default function FinancePage() {
   const { user } = useUserStore();
   const isFactory = user?.role === UserRole.Factory;
 
-  return isFactory ? <FactoryFinance /> : <WarehouseFinance />;
+  const canManageFinance = user?.role === UserRole.Admin || user?.role === UserRole.Accountant;
+  return isFactory ? <FactoryFinance /> : <WarehouseFinance canManage={canManageFinance} />;
 }
