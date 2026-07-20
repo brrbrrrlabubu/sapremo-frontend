@@ -55,3 +55,39 @@ body, #root {
   border-radius: 4px;
   cursor: pointer;
 }
+@media print {
+
+  body * {
+    visibility: hidden;
+  }
+
+  .reports-container, 
+  .reports-container * {
+    visibility: visible;
+  }
+
+  .reports-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .ant-layout-sider,
+  .ant-menu,
+  .ant-card:has(.ant-picker), 
+  button,
+  .ant-space {
+    display: none !important;
+  }
+
+  .ant-card {
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .ant-table-wrapper {
+    width: 100% !important;
+  }
+}

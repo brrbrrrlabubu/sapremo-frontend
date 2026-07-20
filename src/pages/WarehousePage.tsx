@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, Table, Tag, Button, Select, Pagination, Spin, Typography, App } from 'antd';
+import { Card, Table, Tag, Button, Select, Pagination, Spin, Typography, App, Modal, Form, Input, InputNumber } from 'antd';
 import { 
   ExclamationCircleFilled,
   LoadingOutlined
@@ -22,6 +22,28 @@ export default function WarehousePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
   const { message } = App.useApp();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form] = Form.useForm();
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
+  const handleAddProduct = async (values: any) => {
+    setConfirmLoading(true);
+    try {
+      // Вызываем сервис создания товара (если он есть в ProductService, 
+      // либо заменяем на твой реальный метод создания)
+      await ProductService.createProduct(values);
+      message.success('Товар успешно добавлен!');
+      setIsModalOpen(false);
+      form.resetFields();
+      loadData(currentPage); // Перезагружаем таблицу
+    } catch (error) {
+      console.error(error);
+      message.error('Ошибка при добавлении товара');
+    } finally {
+      setConfirmLoading(false);
+    }
+  };
 
   const loadData = async (page: number) => {
     setAppState('loading');
@@ -99,7 +121,7 @@ export default function WarehousePage() {
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           {isAdmin && (
-            <Button type="primary">
+            <Button type="primary" onClick={() => setIsModalOpen(true)}>
               {t('warehouse.addProduct') || 'Добавить товар'}
             </Button>
           )}
@@ -127,6 +149,38 @@ export default function WarehousePage() {
           </>
         )}
       </Card>
+      {/* Модальное окно добавления товара */}
+      <Modal
+        title={t('warehouse.addProduct') || 'Добавить товар'}
+        open={isModalOpen}
+        onOk={() => form.submit()}
+        confirmLoading={confirmLoading}
+        onCancel={() => setIsModalOpen(false)}
+        okText="Добавить"
+        cancelText="Отмена"
+      >
+        <Form form={form} layout="vertical" onFinish={handleAddProduct}>
+          <Form.Item name="barcode" label="Баркод (SKU)" rules={[{ required: true, message: 'Введите штрихкод!' }]}>
+            <Input placeholder="Введите баркод" />
+          </Form.Item>
+
+          <Form.Item name="name" label="Название товара" rules={[{ required: true, message: 'Введите название!' }]}>
+            <Input placeholder="Введите название товара" />
+          </Form.Item>
+
+          <Form.Item name="pieces_per_box" label="Штук в коробке" rules={[{ required: true, message: 'Введите количество!' }]}>
+            <InputNumber style={{ width: '100%' }} placeholder="Например: 20" />
+          </Form.Item>
+
+          <Form.Item name="factory_price" label="Заводская цена" rules={[{ required: true, message: 'Введите цену!' }]}>
+            <InputNumber style={{ width: '100%' }} placeholder="0.00" />
+          </Form.Item>
+
+          <Form.Item name="dispatch_price" label="Цена отгрузки" rules={[{ required: true, message: 'Введите цену!' }]}>
+            <InputNumber style={{ width: '100%' }} placeholder="0.00" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

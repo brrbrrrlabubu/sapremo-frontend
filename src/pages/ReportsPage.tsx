@@ -3,6 +3,8 @@ import { Card, Typography, Table, Tag, Button, Select, DatePicker, Menu, Layout,
 import { useTranslation } from 'react-i18next';
 import { PrinterOutlined, DownloadOutlined } from '@ant-design/icons';
 import { ProductService } from '../services/product.service';
+import { exportToExcel } from '../utils/exportToExcel';
+import { useAccess } from '../hooks/useAccess';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -18,6 +20,35 @@ export default function ReportsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
+  const { canManageWarehouse } = useAccess();
+
+// Функция для экспорта в Excel с проверкой данных
+  const handleExport = () => {
+    if (!products || products.length === 0) {
+      message.warning(t('reports.noDataForExport') || 'Нет данных для экспорта');
+      return;
+    }
+
+    const exportData = products.map((item) => ({
+      SKU: item.sku,
+      'Название': item.name,
+      'Категория': item.category,
+      'Остаток': item.current,
+      'Статус': item.status,
+    }));
+    exportToExcel(exportData, 'Warehouse_Report');
+    message.success('Файл успешно экспортирован!');
+  };
+
+  // Функция для печати с проверкой данных
+  const handlePrint = () => {
+    if (!products || products.length === 0) {
+      message.warning(t('reports.noDataForPrint') || 'Нет данных для печати');
+      return;
+    }
+    window.print();
+  };
+  
   const loadData = async (page: number) => {
     setLoading(true);
     try {
@@ -89,8 +120,15 @@ export default function ReportsPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Title level={2} style={{ margin: 0, fontSize: "28px" }}>{t('reports.title')}</Title>
         <Space>
-          <Button icon={<PrinterOutlined />}>{t('reports.print')}</Button>
-          <Button type="primary" icon={<DownloadOutlined />}>{t('reports.exportExcel')}</Button>
+          <Button icon={<PrinterOutlined />} onClick={handlePrint}>
+            {t('reports.print')}
+          </Button>
+
+          {canManageWarehouse && (
+            <Button type="primary" icon={<DownloadOutlined />} onClick={handleExport}>
+              {t('reports.exportExcel')}
+            </Button>
+          )}
         </Space>
       </div>
 

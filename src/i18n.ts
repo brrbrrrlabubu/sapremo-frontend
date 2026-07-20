@@ -148,6 +148,7 @@ const resources = {
         retry: 'Повторить',
         emptyTitle: 'Товары не найдены',
         emptyDesc: 'Добавьте первую позицию для начала учета.',
+        addProduct: "+ Добавить товар",
       },
       // ─── Приёмка ────────────────────────────────────────────────────────
       receiving: {
@@ -277,6 +278,8 @@ const resources = {
         title: 'Отчёты',
         print: 'Печать',
         exportExcel: 'Экспорт в Excel',
+        noDataForExport: "Нет данных для экспорта",
+        noDataForPrint: "Нет данных для печати",
         reportTypes: 'Типы отчётов',
         remains: 'Остатки',
         movement: 'Движение товара',
@@ -616,6 +619,8 @@ const resources = {
         title: 'Reports',
         print: 'Print',
         exportExcel: 'Export to Excel',
+        noDataForExport: "No data for export",
+        noDataForPrint: "No data for printing",
         reportTypes: 'Report types',
         remains: 'Stock',
         movement: 'Product movement',
