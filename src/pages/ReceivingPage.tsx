@@ -10,10 +10,11 @@ export default function ReceivingPage() {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
-  const { isFactory, canCreateReception } = useAccess();
+  const { canCreateReception } = useAccess();
 
   const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -61,6 +62,24 @@ export default function ReceivingPage() {
   useEffect(() => {
     loadData(currentPage);
   }, [currentPage]);
+
+  // Функция для создания приёмки
+  const handleCreateReception = async (values: any) => {
+    setConfirmLoading(true);
+    try {
+      // Здесь вызываем сервис создания (когда бэкенд будет готов)
+      // await ReceptionService.createReception(values);
+      message.success('Приёмка успешно добавлена!', values);
+      setIsModalOpen(false);
+      form.resetFields();
+      loadData(currentPage);
+    } catch (error) {
+      console.error(error);
+      message.error('Ошибка при создании приёмки');
+    } finally {
+      setConfirmLoading(false);
+    }
+  };
 
   const columns = [
     { title: t('receiving.dateCol'), dataIndex: 'date', key: 'date' },
@@ -132,16 +151,17 @@ export default function ReceivingPage() {
           title={t('receiving.modalTitle')}
           open={isModalOpen}
           onCancel={() => setIsModalOpen(false)}
+          confirmLoading={confirmLoading}
           footer={[
-            <Button key="back" onClick={() => setIsModalOpen(false)}>
-              {t('common.cancel')}
-            </Button>,
-            <Button key="submit" type="primary" onClick={() => { form.submit(); setIsModalOpen(false); }}>
-              {t('common.save')}
-            </Button>,
-          ]}
+          <Button key="back" onClick={() => setIsModalOpen(false)}>
+            {t('receiving.cancelBtn')}
+          </Button>,
+          <Button key="submit" type="primary" onClick={() => form.submit()} loading={confirmLoading}>
+            {t('receiving.submitBtn')}
+          </Button>,
+        ]}
         >
-          <Form form={form} layout="vertical" style={{ marginTop: 24 }}>
+          <Form form={form} layout="vertical" onFinish={handleCreateReception} style={{ marginTop: 24 }}>
             <Form.Item label={t('receiving.dateCol')} name="date" rules={[{ required: true, message: t('common.selectDate') }]}>
               <DatePicker style={{ width: '100%' }} format="DD.MM.YYYY" />
             </Form.Item>

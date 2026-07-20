@@ -5,6 +5,7 @@ import { DownloadOutlined } from '@ant-design/icons';
 import { PALETTE } from '../theme/tokens';
 import { DriverService } from '../services/driver.service';
 import { ProductService } from '../services/product.service';
+import { exportToExcel } from '../utils/exportToExcel'; // Импортируем нашу функцию экспорта
 
 const { Title } = Typography;
 
@@ -21,7 +22,6 @@ export default function DriverRequestsPage() {
 
   const fetchProducts = async () => {
     try {
-      // Подгружаем первую страницу товаров для маппинга (в идеале кэшировать)
       const data = await ProductService.getProducts(1, 100);
       const map: Record<string, any> = {};
       data.results.forEach((p: any) => {
@@ -81,6 +81,25 @@ export default function DriverRequestsPage() {
     }
   };
 
+  // Функция для скачивания таблицы заявок в Excel
+  const handleExport = () => {
+    if (!orders || orders.length === 0) {
+      message.warning('Нет данных для экспорта');
+      return;
+    }
+
+    const dataToExport = orders.map((order, index) => ({
+      '№': index + 1,
+      'Водитель ID': order.driverId || 'Н/Д',
+      'Сумма (сом)': order.totalAmount || 0,
+      'Статус': getStatusConfig(order.status).label,
+      'Дата создания': order.createdAt ? new Date(order.createdAt).toLocaleDateString('ru-RU') : '',
+    }));
+
+    exportToExcel(dataToExport, 'Driver_Requests');
+    message.success('Файл успешно выгружен в Excel!');
+  };
+
   const columns = [
     { 
       title: 'Водитель (ID)', 
@@ -134,7 +153,16 @@ export default function DriverRequestsPage() {
           <Select placeholder={t('driverRequests.allStatuses')} style={{ width: 140, height: 40 }} />
           <Select placeholder={t('driverRequests.allDrivers')} style={{ width: 140, height: 40 }} />
         </Space>
-        <Button icon={<DownloadOutlined />} size="large" style={{ borderRadius: '6px' }}>{t('driverRequests.exportExcel')}</Button>
+        
+        {/* Кнопка экспорта теперь вызывает handleExport */}
+        <Button 
+          icon={<DownloadOutlined />} 
+          size="large" 
+          style={{ borderRadius: '6px' }} 
+          onClick={handleExport}
+        >
+          {t('driverRequests.exportExcel')}
+        </Button>
       </div>
 
       <Card bordered={false} style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }} styles={{ body: { padding: 0 } }}>

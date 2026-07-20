@@ -14,6 +14,7 @@ export default function WarehouseRequestsPage() {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const { message } = App.useApp();
   const { canManageWarehouse } = useAccess();
@@ -70,6 +71,24 @@ export default function WarehouseRequestsPage() {
     loadData(currentPage);
   }, [currentPage]);
 
+  // Функция для создания заявки (привязана к форме)
+  const handleCreateRequest = async (values: any) => {
+    setConfirmLoading(true);
+    try {
+      // Здесь вызываем реальный сервис создания (когда бэкенд оживет)
+      await WarehouseOrderService.createOrder(values); 
+      message.success('Заявка успешно добавлена!');
+      setIsModalOpen(false);
+      form.resetFields();
+      loadData(currentPage);
+    } catch (error) {
+      console.error(error);
+      message.error('Ошибка при создании заявки');
+    } finally {
+      setConfirmLoading(false);
+    }
+  };
+
   const columns = [
     { 
       title: t('warehouseRequests.requestNoCol'), 
@@ -118,12 +137,11 @@ export default function WarehouseRequestsPage() {
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
           <Button icon={<ReloadOutlined />} size="large" style={{ borderRadius: '6px' }} onClick={() => loadData(currentPage)} />
-            {canManageWarehouse && (
-              <Button type="primary" icon={<PlusOutlined />} size="large" style={{ borderRadius: '6px' }} onClick={() => setIsModalOpen(true)}
-             >
-          {t('warehouseRequests.createRequest')}
-        </Button>
-       )}
+          {canManageWarehouse && (
+            <Button type="primary" icon={<PlusOutlined />} size="large" style={{ borderRadius: '6px' }} onClick={() => setIsModalOpen(true)}>
+              {t('warehouseRequests.createRequest')}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -149,16 +167,17 @@ export default function WarehouseRequestsPage() {
         title={t('warehouseRequests.modalTitle')}
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
+        confirmLoading={confirmLoading}
         footer={[
           <Button key="back" onClick={() => setIsModalOpen(false)}>
-            {t('common.cancel')}
+            {t('warehouseRequests.cancelBtn')}
           </Button>,
-          <Button key="submit" type="primary" onClick={() => { form.submit(); setIsModalOpen(false); }}>
-            {t('warehouseRequests.submitRequest')}
+          <Button key="submit" type="primary" onClick={() => form.submit()} loading={confirmLoading}>
+            {t('warehouseRequests.submitBtn')}
           </Button>,
         ]}
       >
-        <Form form={form} layout="vertical" style={{ marginTop: 24 }}>
+        <Form form={form} layout="vertical" onFinish={handleCreateRequest} style={{ marginTop: 24 }}>
           <Form.Item label={t('warehouseRequests.dateCol')} name="date" rules={[{ required: true, message: t('common.selectDate') }]}>
             <DatePicker style={{ width: '100%' }} format="DD.MM.YYYY" />
           </Form.Item>

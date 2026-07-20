@@ -165,6 +165,8 @@ const resources = {
         enterBatch: 'Введите номер партии',
         batchPlaceholder: 'Например: B-062',
         quantityLabel: 'Количество (кор.)',
+        submitBtn: 'Добавить',
+        cancelBtn: 'Отмена',
       },
       // ─── Выдача / Отгрузки ──────────────────────────────────────────────
       shipment: {
@@ -194,6 +196,7 @@ const resources = {
         actionCol: 'Действие',
         cancelBtn: 'Отмена',
         statusFilter: 'Статус',
+        submitBtn: 'Добавить',
         // Modal
         modalTitle: 'Новая заявка на товар',
         submitRequest: 'Отправить заявку',
@@ -325,6 +328,9 @@ const resources = {
         nameLabel: 'ФИО',
         plateLabel: 'Госномер',
         phoneLabel: 'Телефон',
+        nameRequired: "Пожалуйста, введите ФИО водителя!",
+        plateRequired: "Пожалуйста, введите гос. номер!",
+        phoneRequired: "Пожалуйста, введите номер телефона!",
       },
       // ─── Заявки водителей ───────────────────────────────────────────────
       driverRequests: {
@@ -509,6 +515,8 @@ const resources = {
         enterBatch: 'Enter batch number',
         batchPlaceholder: 'e.g. B-062',
         quantityLabel: 'Quantity (boxes)',
+        submitBtn: 'Add',
+        cancelBtn: 'Cancel',  
       },
       // ─── Shipments ──────────────────────────────────────────────────────
       shipment: {
@@ -543,6 +551,7 @@ const resources = {
         carLabel: 'Vehicle plate number',
         selectCar: 'Select vehicle',
         errorLoading: 'Error loading requests',
+        submitBtn: 'Add',
       },
       // ─── Finance ────────────────────────────────────────────────────────
       finance: {
@@ -664,6 +673,9 @@ const resources = {
         nameLabel: 'Full name',
         plateLabel: 'License plate',
         phoneLabel: 'Phone number',
+        nameRequired: 'Please enter driver full name!',
+        plateRequired: 'Please enter plate number!',
+        phoneRequired: 'Please enter phone number!',
       },
       // ─── Driver Requests ────────────────────────────────────────────────
       driverRequests: {
