@@ -75,8 +75,17 @@ export default function WarehouseRequestsPage() {
   const handleCreateRequest = async (values: any) => {
     setConfirmLoading(true);
     try {
-      // Здесь вызываем реальный сервис создания (когда бэкенд оживет)
-      await WarehouseOrderService.createOrder(values); 
+      // Преобразуем данные формы в формат, который ожидает бэкенд
+      const payload = {
+        comment: values.note || '',
+        items: [
+          {
+            product_id: values.product_id, // нужен выбор товара в форме
+            qty: Number(values.quantity),
+          }
+        ]
+      };
+      await WarehouseOrderService.createOrder(payload); 
       message.success('Заявка успешно добавлена!');
       setIsModalOpen(false);
       form.resetFields();
@@ -145,7 +154,7 @@ export default function WarehouseRequestsPage() {
         </div>
       </div>
 
-      <Card bordered={false} style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }} styles={{ body: { padding: 0 } }}>
+      <Card variant="borderless" style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }} styles={{ body: { padding: 0 } }}>
         <Table 
           columns={columns} 
           dataSource={data} 
@@ -188,7 +197,11 @@ export default function WarehouseRequestsPage() {
               <Select.Option value="car2">02 KG 456 DEF</Select.Option>
             </Select>
           </Form.Item>
-
+          
+          <Form.Item label="ID товара" name="product_id" rules={[{ required: true, message: 'Введите ID товара!' }]}>
+            <Input placeholder="Введите UUID товара" />
+          </Form.Item>
+          
           <Form.Item label={t('common.quantity')} name="quantity" rules={[{ required: true, message: t('common.enterQuantity') }]}>
             <Input type="number" />
           </Form.Item>

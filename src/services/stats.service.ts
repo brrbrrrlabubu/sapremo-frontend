@@ -3,8 +3,14 @@ import { axiosClient } from '../api/axiosClient';
 export class StatsService {
   public static async getKpis() {
     try {
-      const response = await axiosClient.get('/stats/kpis');
-      return response.data;
+      const [countryRes, warehousesRes] = await Promise.all([
+        axiosClient.get('/stats/country').catch(() => ({ data: null })),
+        axiosClient.get('/stats/warehouses').catch(() => ({ data: null }))
+      ]);
+      return {
+        country: countryRes.data,
+        warehouses: warehousesRes.data,
+      };
     } catch (e) {
       console.warn("KPIs endpoint failed", e);
       return null;

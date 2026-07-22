@@ -129,7 +129,7 @@ export default function WarehousePage() {
         </div>
       </div>
 
-      <Card bordered={false} style={{ borderRadius: '8px' }} styles={{ body: { padding: 0 } }}>
+      <Card variant="borderless" style={{ borderRadius: '8px' }} styles={{ body: { padding: 0 } }}>
         {appState === 'loading' ? (
           <div style={{ minHeight: '400px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
