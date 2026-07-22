@@ -6,7 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { PALETTE } from '../theme/tokens';
 import { ProductService } from '../services/product.service';
 import { RoleGuard } from '../components/RoleGuard';
-import { PERMISSIONS } from '../config/roles';
+import { PERMISSIONS } from "../types/enums";
 
 const { Text } = Typography;
 

@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import { UserRole } from "../types/enums";
 import DashboardPage from "../pages/DashboardPage";
@@ -21,21 +21,24 @@ const router = createBrowserRouter([
     path: "/",
     element: <MainLayout />,
     children: [
-      // Пути, доступные всем авторизованным (с разными уровнями доступа внутри)
+      {
+        element: <ProtectedRoute allowedRoles={[UserRole.Admin, UserRole.Manager, UserRole.Factory, UserRole.Accountant, UserRole.WarehouseManager]} />,
+        children: [
+          { index: true, element: <DashboardPage /> },
+          { path: "requests", element: <WarehouseRequestsPage /> },
+        ],
+      },
       {
         element: <ProtectedRoute allowedRoles={[UserRole.Admin, UserRole.Manager, UserRole.Factory, UserRole.Accountant]} />,
         children: [
-          { index: true, element: <DashboardPage /> },
           { path: "shipments", element: <ShipmentsPage /> },
           { path: "warehouses", element: <WarehousePage /> },
-          { path: "requests", element: <WarehouseRequestsPage /> },
-          { path: "driver-requests", element: <DriverRequestsPage /> },
-          { path: "drivers", element: <DriversPage /> },
           { path: "receiving", element: <ReceivingPage /> },
           { path: "returns", element: <ReturnsPage /> },
+          { path: "drivers", element: <DriversPage /> },
+          { path: "driver-requests", element: <DriverRequestsPage /> },
         ],
       },
-      // Пути для финансов и аналитики (Админ и Бухгалтер)
       {
         element: <ProtectedRoute allowedRoles={[UserRole.Admin, UserRole.Accountant, UserRole.Factory, UserRole.Manager]} />,
         children: [
@@ -44,7 +47,6 @@ const router = createBrowserRouter([
           { path: "reports", element: <ReportsPage /> },
         ],
       },
-      // Пути для производства (Админ и Фабрика)
       {
         element: <ProtectedRoute allowedRoles={[UserRole.Admin, UserRole.Factory]} />,
         children: [
@@ -56,6 +58,10 @@ const router = createBrowserRouter([
   {
     path: "/login",
     element: <LoginPage />,
+  },
+  {
+    path: "*",
+    element: <Navigate to="/" replace />,
   },
 ], {
   basename: import.meta.env.BASE_URL,

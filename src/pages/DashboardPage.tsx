@@ -5,16 +5,24 @@ import { InboxOutlined, FallOutlined, WalletOutlined, BankOutlined } from '@ant-
 import { StatsService } from '../services/stats.service';
 import { DriverService } from '../services/driver.service';
 import { useAccess } from '../hooks/useAccess';
+import { useUserStore } from '../store/useUserStore';
+import { UserRole } from '../types/enums';
 
 const { Text, Title } = Typography;
+
 function WarehouseDashboard() {
   const { message } = App.useApp();
   const { t } = useTranslation();
+  const { user } = useUserStore();
+  const isWarehouseManager = (user?.role as string) === UserRole.WarehouseManager || (user?.role as string) === 'warehouse_manager';
   
   const [kpiData, setKpiData] = useState<any>(null);
   const [driverDebtSum, setDriverDebtSum] = useState<number>(0);
 
   const loadData = useCallback(async () => {
+    // Если зав. склад, не запрашиваем финансовую и общую статистику складов, к которой у него нет доступа
+    if (isWarehouseManager) return;
+
     try {
       const [kpis, debtsResp] = await Promise.all([
         StatsService.getKpis(),
@@ -29,7 +37,7 @@ function WarehouseDashboard() {
       console.error(e);
       message.error(t('dashboard.errorLoading'));
     }
-  }, [message, t]);
+  }, [message, t, isWarehouseManager]);
 
   useEffect(() => {
     loadData();
@@ -46,7 +54,7 @@ function WarehouseDashboard() {
     <Row gutter={[16, 16]}>
       {kpiItems.map((kpi, i) => (
         <Col xs={24} sm={12} xl={6} key={i}>
-          <Card bordered={false}>
+          <Card variant="borderless">
             <Text type="secondary">{kpi.title}</Text>
             <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{kpi.value}</div>
           </Card>
@@ -57,14 +65,21 @@ function WarehouseDashboard() {
 }
 
 export default function DashboardPage() {
- const { isFactory } = useAccess();
+  const { isFactory } = useAccess();
+  const { user } = useUserStore();
+  const isWarehouseManager = (user?.role as string) === UserRole.WarehouseManager || (user?.role as string) === 'warehouse_manager';
 
-  // Если нужно вернуть компоненты для каждой роли:
   return (
     <div style={{ padding: '24px' }}>
-      {isFactory ? (<div style={{ textAlign: 'center', marginTop: '50px' }}>
+      {isFactory ? (
+        <div style={{ textAlign: 'center', marginTop: '50px' }}>
           <Title level={3}>Добро пожаловать, Завод!</Title>
           <p>Используйте меню слева для работы с приёмкой и отгрузкой.</p>
+        </div>
+      ) : isWarehouseManager ? (
+        <div style={{ textAlign: 'center', marginTop: '50px' }}>
+          <Title level={3}>Добро пожаловать, Зав. складом!</Title>
+          <p>Используйте меню слева для работы со складскими заявками.</p>
         </div>
       ) : (
         <WarehouseDashboard />

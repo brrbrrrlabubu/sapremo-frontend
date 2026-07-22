@@ -76,10 +76,11 @@ export default function MainLayout() {
     }
   ];
 
-  const r = user?.role;
+  const r = user?.role as string | undefined;
   const isAdmin = r === UserRole.Admin;
   const isFactory = r === UserRole.Factory || isAdmin;
-  const isManager = r === UserRole.Manager || isAdmin;
+  const isWarehouseManager = r === UserRole.WarehouseManager || r === 'warehouse_manager';
+  const isManager = r === UserRole.Manager || isAdmin; // Убрано включение warehouse_manager в общий isManager
   const isAccountant = r === UserRole.Accountant || isAdmin;
   
 
@@ -88,7 +89,7 @@ export default function MainLayout() {
     ...(isManager ? [{ key: "/warehouses", icon: <ShoppingOutlined />, label: <Link to="/warehouses">{t('menu.products')}</Link> }] : []),
     ...(isManager ? [{ key: "/drivers", icon: <CarOutlined />, label: <Link to="/drivers">{t('menu.drivers')}</Link> }] : []),
     ...(isManager ? [{ key: "/driver-requests", icon: <FileTextOutlined />, label: <Link to="/driver-requests">{t('menu.driverRequests')}</Link> }] : []),
-    ...(isManager ? [{ key: "/requests", icon: <FileTextOutlined />, label: <Link to="/requests">{t('menu.requests')}</Link> }] : []),
+    ...(isManager || isWarehouseManager || isAdmin ? [{ key: "/requests", icon: <FileTextOutlined />, label: <Link to="/requests">{t('menu.requests')}</Link> }] : []),
     ...(isFactory ? [{ key: "/factory", icon: <ShopOutlined />, label: <Link to="/factory">{t('menu.factory', 'Склад')}</Link> }] : []),
     ...(isManager ? [{ key: "/receiving", icon: <ImportOutlined />, label: <Link to="/receiving">{t('menu.receiving')}</Link> }] : []),
     ...(isManager || isFactory ? [{ key: "/shipments", icon: <ExportOutlined />, label: <Link to="/shipments">{t('menu.shipments')}</Link> }] : []),

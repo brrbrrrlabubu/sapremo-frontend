@@ -5,12 +5,16 @@ import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { ReceptionService } from '../services/reception.service';
 import type { Reception } from '../types/api.types';
 import { useAccess } from '../hooks/useAccess';
+import { useUserStore } from '../store/useUserStore';
+import { UserRole } from '../types/enums';
 
 export default function ReceivingPage() {
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
   const { canCreateReception } = useAccess();
+  const { user } = useUserStore();
+  const isWarehouseManager = (user?.role as string) === UserRole.WarehouseManager || (user?.role as string) === 'warehouse_manager';
 
   const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
@@ -21,6 +25,9 @@ export default function ReceivingPage() {
   const pageSize = 10;
 
   const loadData = async (page: number) => {
+    // Предотвращаем отправку запроса, если у роли нет доступа
+    if (isWarehouseManager) return;
+
     setLoading(true);
     try {
       const res = await ReceptionService.getReceptions(page, pageSize);
@@ -60,15 +67,14 @@ export default function ReceivingPage() {
   };
 
   useEffect(() => {
-    loadData(currentPage);
-  }, [currentPage]);
+    if (!isWarehouseManager) {
+      loadData(currentPage);
+    }
+  }, [currentPage, isWarehouseManager]);
 
-  // Функция для создания приёмки
   const handleCreateReception = async (values: any) => {
     setConfirmLoading(true);
     try {
-      // Здесь вызываем сервис создания (когда бэкенд будет готов)
-      // await ReceptionService.createReception(values);
       message.success('Приёмка успешно добавлена!', values);
       setIsModalOpen(false);
       form.resetFields();
@@ -112,21 +118,25 @@ export default function ReceivingPage() {
     },
   ];
 
+  if (isWarehouseManager) {
+    return <div style={{ padding: '24px' }}>У вас нет доступа к этому разделу.</div>;
+  }
+
   return (
     <>
       <Card 
-        bordered={false} 
+        variant="borderless" 
         style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }} 
         styles={{ body: { padding: 0 }, header: { borderBottom: 'none', padding: '16px 24px 0' } }}
         extra={
           <div style={{ display: 'flex', gap: 12 }}>
             <Button icon={<ReloadOutlined />} onClick={() => loadData(currentPage)} />
-              {canCreateReception && (
+            {canCreateReception && (
               <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>
-            {t('receiving.newReception')}
-          </Button>
+                {t('receiving.newReception')}
+              </Button>
             )}
-        </div>
+          </div>
         }
       >
         <Table 
@@ -153,13 +163,13 @@ export default function ReceivingPage() {
           onCancel={() => setIsModalOpen(false)}
           confirmLoading={confirmLoading}
           footer={[
-          <Button key="back" onClick={() => setIsModalOpen(false)}>
-            {t('receiving.cancelBtn')}
-          </Button>,
-          <Button key="submit" type="primary" onClick={() => form.submit()} loading={confirmLoading}>
-            {t('receiving.submitBtn')}
-          </Button>,
-        ]}
+            <Button key="back" onClick={() => setIsModalOpen(false)}>
+              {t('receiving.cancelBtn')}
+            </Button>,
+            <Button key="submit" type="primary" onClick={() => form.submit()} loading={confirmLoading}>
+              {t('receiving.submitBtn')}
+            </Button>,
+          ]}
         >
           <Form form={form} layout="vertical" onFinish={handleCreateReception} style={{ marginTop: 24 }}>
             <Form.Item label={t('receiving.dateCol')} name="date" rules={[{ required: true, message: t('common.selectDate') }]}>
