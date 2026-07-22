@@ -4,7 +4,6 @@ import { Card, Typography, Table, Tag, Button, Select, Modal, Form, DatePicker, 
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { PALETTE } from '../theme/tokens';
 import { WarehouseOrderService } from '../services/warehouseOrder.service';
-import type { WarehouseOrder } from '../types/api.types';
 import { useAccess } from '../hooks/useAccess';
 
 const { Title } = Typography;
@@ -25,22 +24,22 @@ export default function WarehouseRequestsPage() {
   const pageSize = 10;
 
   const loadData = async (page: number) => {
-    setLoading(true);
-    try {
-      const res = await WarehouseOrderService.getOrders(page, pageSize);
-      setTotal(res.count);
-      
-      const flattenedData: any[] = [];
-      res.results.forEach((order: WarehouseOrder) => {
+  setLoading(true);
+  try {
+    const res = await WarehouseOrderService.getOrders(page, pageSize);
+    setTotal(res.count);
+    
+    const flattenedData: any[] = [];
+    res.results.forEach((order: any) => {
         if (order.items && order.items.length > 0) {
-          order.items.forEach(item => {
+          order.items.forEach((item: any) => {
             flattenedData.push({
-              id: item.id || Math.random().toString(),
+              id: item.id || order.id || Math.random().toString(),
               orderId: order.id,
               req: order.id ? order.id.slice(0, 8) : "WREQ-XXX",
-              date: new Date(order.created_at || Date.now()).toLocaleDateString('ru-RU'),
-              product: item.productId || item.product_id ? `Товар ${(item.productId || item.product_id)?.slice(0,8)}` : "—",
-              quantity: item.qty || 0,
+              date: order.created_at ? new Date(order.created_at).toLocaleDateString('ru-RU') : "—",
+              product: item.product_name || item.productId || item.product_id ? `Товар ${(item.productId || item.product_id || '').slice(0, 8)}` : "—",
+              quantity: item.qty || item.quantity || 0,
               note: order.comment || "—",
               status: order.status || "pending",
             });
@@ -50,22 +49,22 @@ export default function WarehouseRequestsPage() {
             id: order.id,
             orderId: order.id,
             req: order.id ? order.id.slice(0, 8) : "WREQ-XXX",
-            date: new Date(order.created_at || Date.now()).toLocaleDateString('ru-RU'),
-            product: "—",
-            quantity: 0,
+            date: order.created_at ? new Date(order.created_at).toLocaleDateString('ru-RU') : "—",
+            product: order.product_name || "—",
+            quantity: order.quantity || 0,
             note: order.comment || "—",
             status: order.status || "pending",
           });
         }
       });
-      setData(flattenedData);
-    } catch (err) {
-      console.error(err);
-      message.error(t('warehouseRequests.errorLoading'));
-    } finally {
-      setLoading(false);
-    }
-  };
+    setData(flattenedData);
+  } catch (err) {
+    console.error(err);
+    message.error(t('warehouseRequests.errorLoading'));
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     loadData(currentPage);
@@ -73,30 +72,35 @@ export default function WarehouseRequestsPage() {
 
   // Функция для создания заявки (привязана к форме)
   const handleCreateRequest = async (values: any) => {
-    setConfirmLoading(true);
-    try {
-      // Преобразуем данные формы в формат, который ожидает бэкенд
-      const payload = {
-        comment: values.note || '',
-        items: [
-          {
-            product_id: values.product_id, // нужен выбор товара в форме
-            qty: Number(values.quantity),
-          }
-        ]
-      };
-      await WarehouseOrderService.createOrder(payload); 
-      message.success('Заявка успешно добавлена!');
-      setIsModalOpen(false);
-      form.resetFields();
+  setConfirmLoading(true);
+  try {
+    const payload = {
+      comment: values.note || '',
+      items: [
+        {
+          product_id: values.product_id,
+          qty: Number(values.quantity),
+        }
+      ]
+    };
+    
+    await WarehouseOrderService.createOrder(payload); 
+    message.success('Заявка успешно добавлена!');
+    setIsModalOpen(false);
+    form.resetFields();
+    
+    // Небольшая задержка для бэкенда на Render
+    setTimeout(() => {
       loadData(currentPage);
-    } catch (error) {
-      console.error(error);
-      message.error('Ошибка при создании заявки');
-    } finally {
-      setConfirmLoading(false);
-    }
-  };
+    }, 500);
+
+  } catch (error) {
+    console.error(error);
+    message.error('Ошибка при создании заявки');
+  } finally {
+    setConfirmLoading(false);
+  }
+};
 
   const columns = [
     { 

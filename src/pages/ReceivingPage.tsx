@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Card, Table, Tag, Button, Modal, Form, Input, DatePicker, Select, App } from 'antd';
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { ReceptionService } from '../services/reception.service';
+import { WarehouseService } from '../services/warehouse.service';
 import type { Reception } from '../types/api.types';
 import { useAccess } from '../hooks/useAccess';
 import { useUserStore } from '../store/useUserStore';
@@ -22,10 +23,10 @@ export default function ReceivingPage() {
   const [data, setData] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [warehouses, setWarehouses] = useState<any[]>([]);
   const pageSize = 10;
 
   const loadData = async (page: number) => {
-    // Предотвращаем отправку запроса, если у роли нет доступа
     if (isWarehouseManager) return;
 
     setLoading(true);
@@ -41,8 +42,8 @@ export default function ReceivingPage() {
               id: item.id || Math.random().toString(),
               date: new Date(reception.delivered_at).toLocaleDateString('ru-RU'),
               batch: reception.delivery_number,
-              product: item.product_name || t('common.unknownProduct'),
-              quantity: item.expected_qty,
+              product: item.product_name || (item as any).product || t('common.unknownProduct'),
+              quantity: item.expected_qty ?? (item as any).quantity ?? 0,
               status: reception.status_display || reception.status || "Ожидается",
             });
           });
@@ -66,19 +67,47 @@ export default function ReceivingPage() {
     }
   };
 
+  const fetchWarehouses = async () => {
+    try {
+      const res = await WarehouseService.getStats();
+      setWarehouses(Array.isArray(res) ? res : (res as any)?.results || []);
+    } catch (err) {
+      console.error('Ошибка загрузки складов', err);
+    }
+  };
+
   useEffect(() => {
     if (!isWarehouseManager) {
       loadData(currentPage);
+      fetchWarehouses();
     }
   }, [currentPage, isWarehouseManager]);
 
   const handleCreateReception = async (values: any) => {
     setConfirmLoading(true);
     try {
-      message.success('Приёмка успешно добавлена!', values);
+      const payload = {
+        warehouse_id: values.warehouse_id,
+        delivery_number: values.batch,
+        delivered_at: values.date ? values.date.format('YYYY-MM-DD') : new Date().toISOString().split('T')[0],
+        status: 'pending',
+        created_by: user?.id?.toString() || '00000000-0000-0000-0000-000000000000',
+        items: [
+          {
+            product_id: values.product,
+            expected_qty: Number(values.quantity),
+          }
+        ]
+      };
+
+      await ReceptionService.createReception(payload as any);
+      message.success('Приёмка успешно добавлена!');
       setIsModalOpen(false);
       form.resetFields();
-      loadData(currentPage);
+      
+      setTimeout(() => {
+        loadData(currentPage);
+      }, 400);
     } catch (error) {
       console.error(error);
       message.error('Ошибка при создании приёмки');
@@ -172,6 +201,20 @@ export default function ReceivingPage() {
           ]}
         >
           <Form form={form} layout="vertical" onFinish={handleCreateReception} style={{ marginTop: 24 }}>
+            <Form.Item label="Склад" name="warehouse_id" rules={[{ required: true, message: 'Пожалуйста, выберите склад!' }]}>
+              <Select placeholder="Выберите склад">
+                {warehouses.map((wh: any, index: number) => {
+                  const id = wh.id || wh.warehouse_id || '';
+                  const shortId = id.length > 8 ? `${id.substring(0, 8)}...` : id;
+                  return (
+                    <Select.Option key={id} value={id}>
+                      {wh.name || wh.warehouse_name || `Склад №${index + 1} (${shortId})`}
+                    </Select.Option>
+                  );
+                })}
+              </Select>
+            </Form.Item>
+
             <Form.Item label={t('receiving.dateCol')} name="date" rules={[{ required: true, message: t('common.selectDate') }]}>
               <DatePicker style={{ width: '100%' }} format="DD.MM.YYYY" />
             </Form.Item>

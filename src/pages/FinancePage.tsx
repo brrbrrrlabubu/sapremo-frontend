@@ -8,18 +8,20 @@ import {
 import { PALETTE } from '../theme/tokens';
 import { PaymentService } from '../services/payment.service';
 import type { Payment } from '../types/api.types';
+import { useUserStore } from '../store/useUserStore';
+import { UserRole } from '../types/enums';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
 
-function WarehouseFinance({ canManage }: { canManage: boolean }) {
+function WarehouseFinance() {
   const [activeTab, setActiveTab] = useState('income');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
   const { t } = useTranslation();
+  const { user } = useUserStore();
   
-
   const isExpense = activeTab === 'expense';
 
   const { message } = App.useApp();
@@ -31,7 +33,6 @@ function WarehouseFinance({ canManage }: { canManage: boolean }) {
 
   const [totalDebt, setTotalDebt] = useState<number>(0);
   
-
   const loadData = async (page: number) => {
     setLoading(true);
     try {
@@ -53,6 +54,34 @@ function WarehouseFinance({ canManage }: { canManage: boolean }) {
   useEffect(() => {
     loadData(currentPage);
   }, [currentPage]);
+
+  const handleFormSubmit = async (values: any) => {
+    try {
+      const rawAmount = parseFloat(values.amount);
+      const finalAmount = isExpense ? -Math.abs(rawAmount) : Math.abs(rawAmount);
+
+      const payload = {
+        amount: finalAmount.toString(),
+        payment_method: values.paymentType,
+        comment: values.note || '',
+        paid_at: values.date ? values.date.format('YYYY-MM-DD') : new Date().toISOString(),
+        // Берем warehouse_id из формы (выбранный пользователем) или из профиля юзера как запасной вариант
+        warehouse_id: values.warehouse_id || (user as any)?.warehouse_id || (user as any)?.warehouse || '',
+        client_id: values.entity || '', 
+        operation_time: new Date().toISOString(),
+      };
+
+      await PaymentService.createPayment(payload);
+
+      message.success(isExpense ? 'Расход успешно добавлен' : 'Приход успешно добавлен');
+      setIsModalOpen(false);
+      form.resetFields();
+      loadData(currentPage);
+    } catch (err) {
+      console.error(err);
+      message.error('Не удалось сохранить операцию');
+    }
+  };
 
   const incomeData = payments
     .filter(p => parseFloat(p.amount) >= 0)
@@ -152,7 +181,7 @@ function WarehouseFinance({ canManage }: { canManage: boolean }) {
       <Row gutter={[16, 16]}>
         {balances.map((item, index) => (
           <Col xs={24} md={8} key={index}>
-            <Card bordered={false} style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
+            <Card variant="borderless" style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
               <Text type="secondary" style={{ fontSize: "14px", display: "block", marginBottom: "8px" }}>{item.title}</Text>
               <div style={{ color: item.color, fontSize: "24px", fontWeight: 700, display: "flex", alignItems: "center", gap: "8px" }}>
                 {item.icon}
@@ -163,7 +192,7 @@ function WarehouseFinance({ canManage }: { canManage: boolean }) {
         ))}
       </Row>
 
-      <Card bordered={false} style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }} styles={{ body: { padding: 0 } }}>
+      <Card variant="borderless" style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }} styles={{ body: { padding: 0 } }}>
         <div style={{ padding: "16px 24px 0 24px" }}>
           <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} />
         </div>
@@ -173,30 +202,28 @@ function WarehouseFinance({ canManage }: { canManage: boolean }) {
             <RangePicker style={{ borderRadius: "6px" }} placeholder={[t('finance.startDate'), t('finance.endDate')]} />
             <Select placeholder={t('finance.paymentTypeFilter')} style={{ width: 150, borderRadius: "6px" }} />
           </div>
-          {canManage && (
-            <Button 
-              type="primary" 
-              danger={isExpense} 
-              icon={<PlusOutlined />} 
-              style={{ borderRadius: "6px" }}
-              onClick={() => setIsModalOpen(true)}
-            >
-              {isExpense ? t('finance.newExpense') : t('finance.newIncome')}
-            </Button>
-          )}
-          </div>
+          <Button 
+            type="primary" 
+            danger={isExpense} 
+            icon={<PlusOutlined />} 
+            style={{ borderRadius: "6px" }}
+            onClick={() => setIsModalOpen(true)}
+          >
+            {isExpense ? t('finance.newExpense') : t('finance.newIncome')}
+          </Button>
+        </div>
 
         <Table 
           columns={isExpense ? expenseColumns : (incomeColumns as any)} 
           dataSource={isExpense ? expenseData : (incomeData as any)} 
-          loading={loading}
+          loading={loading} 
           pagination={{
             current: currentPage,
             total: total,
             pageSize: pageSize,
             showSizeChanger: false,
             onChange: (page) => setCurrentPage(page),
-            showTotal: (total, range) => t('common.shown', { from: range[0], to: range[1], total: total.toLocaleString() })
+            showTotal: (totalVal, range) => t('common.shown', { from: range[0], to: range[1], total: totalVal.toLocaleString() })
           }} 
           rowKey="id" 
           style={{ padding: "0 24px 24px 24px" }}
@@ -207,22 +234,27 @@ function WarehouseFinance({ canManage }: { canManage: boolean }) {
         title={isExpense ? t('finance.newExpense') : t('finance.newIncome')}
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
-        footer={[
-          <Button key="back" onClick={() => setIsModalOpen(false)}>
-            {t('common.cancel')}
-          </Button>,
-          <Button key="submit" type="primary" onClick={() => { form.submit(); setIsModalOpen(false); }}>
-            {t('common.save')}
-          </Button>,
-        ]}
+        onOk={() => form.submit()}
+        okText={t('common.save')}
+        cancelText={t('common.cancel')}
       >
-        <Form form={form} layout="vertical" style={{ marginTop: 24 }}>
+        <Form 
+          form={form} 
+          layout="vertical" 
+          style={{ marginTop: 24 }}
+          onFinish={handleFormSubmit}
+        >
+          {/* Поле выбора склада, чтобы бэкенд получал валидный UUID */}
+          <Form.Item label="Склад (UUID)" name="warehouse_id" rules={[{ required: true, message: 'Введите или выберите ID склада' }]}>
+            <Input placeholder="Например: 123e4567-e89b-12d3-a456-426614174000" />
+          </Form.Item>
+
           <Form.Item label={t('common.date')} name="date" rules={[{ required: true, message: t('common.selectDate') }]}>
             <DatePicker style={{ width: '100%' }} format="DD.MM.YYYY" />
           </Form.Item>
           
           <Form.Item label={t('finance.amountLabel')} name="amount" rules={[{ required: true, message: t('common.enterQuantity') }]}>
-            <Input addonAfter={t('common.som')} type="number" />
+            <Input type="number" />
           </Form.Item>
 
           <Form.Item label={t('finance.paymentTypeLabel')} name="paymentType" rules={[{ required: true, message: t('finance.selectPaymentType') }]}>
@@ -266,7 +298,7 @@ function FactoryFinance() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <Title level={2} style={{ margin: 0, fontSize: "28px", fontWeight: 700 }}>История оплат и долги складов</Title>
-      <Card bordered={false} style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }} styles={{ body: { padding: 0 } }}>
+      <Card variant="borderless" style={{ borderRadius: '8px', boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }} styles={{ body: { padding: 0 } }}>
         <Table 
           columns={columns} 
           dataSource={data} 
@@ -279,13 +311,9 @@ function FactoryFinance() {
   );
 }
 
-import { useUserStore } from '../store/useUserStore';
-import { UserRole } from '../types/enums';
-
 export default function FinancePage() {
   const { user } = useUserStore();
   const isFactory = user?.role === UserRole.Factory;
 
-  const canManageFinance = user?.role === UserRole.Admin || user?.role === UserRole.Accountant;
-  return isFactory ? <FactoryFinance /> : <WarehouseFinance canManage={canManageFinance} />;
+  return isFactory ? <FactoryFinance /> : <WarehouseFinance />;
 }
