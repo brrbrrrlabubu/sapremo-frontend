@@ -156,3 +156,21 @@ body {
   background-color: rgba(59, 130, 246, 0.15) !important;
   color: #3b82f6 !important;
 }
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .ant-table, .ant-table * {
+    visibility: visible;
+  }
+  .ant-table {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+  }
+  .ant-card {
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
