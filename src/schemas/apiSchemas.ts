@@ -114,6 +114,7 @@ export const PaymentSchema = z.object({
   comment: z.string().nullable().optional(),
   paid_at: z.string(),
   client_id: z.string(),
+  client_name: z.string().nullable().optional(),
   operation_time: z.string(),
   created_at: z.string().optional(),
   created_by: z.string().uuid().optional(),
